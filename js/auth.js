@@ -45,6 +45,47 @@
     return bcrypt.compareSync(password, hash);
   }
 
+  // Placeholder polling questions (anxiety-themed, Indonesian)
+  const PLACEHOLDER_POLLING_QUESTIONS = [
+    'Apa yang kamu rasakan saat mengalami kecemasan?',
+    'Apa yang biasanya kamu lakukan untuk mengatasi kecemasan?',
+    'Siapa yang biasanya kamu ajak bicara saat merasa cemas?'
+  ];
+
+  // Placeholder quiz questions (anxiety-themed, Indonesian)
+  const PLACEHOLDER_QUIZ_QUESTIONS = [
+    {
+      text: 'Apa itu anxiety?',
+      options: ['Rasa takut berlebihan', 'Kehilangan memori', 'Gangguan tidur', 'Masalah pencernaan'],
+      correctAnswer: 0,
+      duration: 20
+    },
+    {
+      text: 'Manakah yang BUKAN cara mengatasi anxiety?',
+      options: ['Berolahraga', 'Menghindari masalah', 'Berbagi dengan orang terpercaya', 'Tarik napas dalam-dalam'],
+      correctAnswer: 1,
+      duration: 20
+    },
+    {
+      text: 'Apa yang dilakukan Anxiety di Inside Out 2?',
+      options: ['Menyebabkan bahagia', 'Membuat kita peduli', 'Menghilangkan kenangan', 'Membuat kita lupa'],
+      correctAnswer: 1,
+      duration: 20
+    },
+    {
+      text: 'Kapan sebaiknya mencari bantuan profesional untuk anxiety?',
+      options: ['Tidak perlu pernah', 'Ketika mengganggu aktivitas sehari-hari', 'Hanya saat panik', 'Ketika tidak bisa tidur satu malam'],
+      correctAnswer: 1,
+      duration: 20
+    },
+    {
+      text: 'Apa yang TIDAK membantu mengurangi anxiety?',
+      options: ['Meditasi', 'Mengkonsumsi alkohol berlebihan', 'Curhat', 'Olahraga rutin'],
+      correctAnswer: 1,
+      duration: 20
+    }
+  ];
+
   /**
    * Initialize authentication and session settings in Firestore
    * Creates default admin password hash and session configuration if not exists
@@ -67,14 +108,14 @@
             emojis: ['😰', '😤', '😢', '😅', '🙏']
           },
           [FIELD_POLLING_CONFIG]: {
-            questions: []
+            questions: PLACEHOLDER_POLLING_QUESTIONS
           },
           [FIELD_QUIZ_CONFIG]: {
-            questions: []
+            questions: PLACEHOLDER_QUIZ_QUESTIONS
           }
         });
 
-        console.log('Auth initialized with default settings');
+        console.log('Auth initialized with default settings and placeholder content');
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
