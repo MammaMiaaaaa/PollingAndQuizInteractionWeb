@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Superpowers brainstorming
+.superpowers/
+
+# Editor
+.DS_Store
+*.swp
+*.swo
+.vscode/
+
+# Environment
+.env
+.env.local
