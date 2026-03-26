@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AnxietyTalk - Join Session</title>
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/user.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="user-page">
+    <!-- Join Form -->
+    <div class="join-container" id="joinContainer">
+      <div class="join-header">
+        <h1 class="join-title">ANXIETY TALK</h1>
+        <p class="join-subtitle">Enter your name to join</p>
+      </div>
+
+      <form id="joinForm" class="join-form">
+        <div class="form-group">
+          <input
+            type="text"
+            id="nameInput"
+            class="form-input"
+            placeholder="Your name"
+            maxlength="20"
+            required
+            autocomplete="off"
+          >
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg w-full">Join Session</button>
+      </form>
+
+      <p id="joinError" class="form-error hidden text-center mt-md"></p>
+
+      <div class="join-footer">
+        <p class="join-note">Powered by AnxietyTalk</p>
+      </div>
+    </div>
+
+    <!-- Session Container (hidden initially) -->
+    <div class="session-container hidden" id="sessionContainer">
+      <!-- User Header -->
+      <header class="user-header">
+        <div class="user-welcome">
+          <span class="welcome-text">Hello,</span>
+          <span class="user-name" id="userName">User</span>
+        </div>
+        <div class="user-score">
+          <span class="score-label">Score:</span>
+          <span class="score-value" id="userScore">0</span>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="user-main">
+        <!-- Waiting State -->
+        <div class="state-view active" id="waitingState">
+          <div class="state-content">
+            <div class="waiting-animation">
+              <div class="pulse-ring"></div>
+              <div class="pulse-ring"></div>
+              <div class="pulse-ring"></div>
+            </div>
+            <h2 class="state-title">You're in!</h2>
+            <p class="state-text">Waiting for the session to start...</p>
+          </div>
+        </div>
+
+        <!-- Polling State -->
+        <div class="state-view hidden" id="pollingState">
+          <div class="state-content">
+            <h2 class="state-title" id="pollPrompt">Share your thoughts</h2>
+            <div class="keyword-buttons" id="keywordButtons">
+              <!-- Keyword buttons will be populated dynamically -->
+            </div>
+            <p class="state-hint">Tap a keyword or type your own</p>
+            <div class="custom-input-container">
+              <input
+                type="text"
+                id="customKeywordInput"
+                class="form-input"
+                placeholder="Type your own..."
+                maxlength="30"
+              >
+              <button id="sendCustomKeyword" class="btn btn-primary">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz State -->
+        <div class="state-view hidden" id="quizState">
+          <div class="state-content">
+            <div class="quiz-timer-display">
+              <svg class="timer-circle" viewBox="0 0 100 100">
+                <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                <circle class="timer-progress" id="quizTimerProgress" cx="50" cy="50" r="45"></circle>
+              </svg>
+              <span class="timer-value" id="quizTimerValue">30</span>
+            </div>
+            <h2 class="quiz-prompt" id="quizPromptText">Question loading...</h2>
+            <div class="quiz-answer-buttons" id="quizAnswerButtons">
+              <button class="quiz-answer-btn" data-answer="A">
+                <span class="answer-letter">A</span>
+                <span class="answer-text" id="quizAnswerA">-</span>
+              </button>
+              <button class="quiz-answer-btn" data-answer="B">
+                <span class="answer-letter">B</span>
+                <span class="answer-text" id="quizAnswerB">-</span>
+              </button>
+              <button class="quiz-answer-btn" data-answer="C">
+                <span class="answer-letter">C</span>
+                <span class="answer-text" id="quizAnswerC">-</span>
+              </button>
+              <button class="quiz-answer-btn" data-answer="D">
+                <span class="answer-letter">D</span>
+                <span class="answer-text" id="quizAnswerD">-</span>
+              </button>
+            </div>
+            <p class="quiz-feedback hidden" id="quizFeedback"></p>
+          </div>
+        </div>
+
+        <!-- Leaderboard State -->
+        <div class="state-view hidden" id="leaderboardState">
+          <div class="state-content">
+            <h2 class="state-title">Top Players</h2>
+            <div class="mini-leaderboard" id="miniLeaderboard">
+              <!-- Mini leaderboard will be populated dynamically -->
+            </div>
+            <p class="your-rank" id="yourRank">Your rank: #-</p>
+          </div>
+        </div>
+      </main>
+
+      <!-- Reaction Bar -->
+      <div class="reaction-bar" id="reactionBar">
+        <button class="reaction-btn" data-reaction="heart">
+          <span class="reaction-emoji">&#10084;&#65039;</span>
+        </button>
+        <button class="reaction-btn" data-reaction="fire">
+          <span class="reaction-emoji">&#128293;</span>
+        </button>
+        <button class="reaction-btn" data-reaction="laugh">
+          <span class="reaction-emoji">&#128514;</span>
+        </button>
+        <button class="reaction-btn" data-reaction="wow">
+          <span class="reaction-emoji">&#128558;</span>
+        </button>
+        <button class="reaction-btn" data-reaction="sad">
+          <span class="reaction-emoji">&#128546;</span>
+        </button>
+        <button class="reaction-btn" data-reaction="clap">
+          <span class="reaction-emoji">&#128079;&#127995;</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="connection-status" id="connectionStatus">
+      <span class="status-dot"></span>
+      <span class="status-text">Connecting...</span>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+
+  <!-- User JS -->
+  <script src="js/user.js"></script>
+</body>
+</html>

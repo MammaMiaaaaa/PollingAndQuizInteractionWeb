@@ -1,0 +1,712 @@
+/* ==========================================================================
+   Mobile User Styles - AnxietyTalk
+   ========================================================================== */
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+.user-page {
+  min-height: 100vh;
+  background-color: var(--color-off-white);
+  position: relative;
+  padding-bottom: 80px; /* Space for reaction bar */
+}
+
+/* ==========================================================================
+   Join Container
+   ========================================================================== */
+
+.join-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(180deg, var(--color-off-white) 0%, #fff 100%);
+}
+
+.join-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.join-title {
+  font-family: var(--font-display);
+  font-size: var(--text-6xl);
+  color: var(--color-black);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.join-subtitle {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  color: #666;
+}
+
+.join-form {
+  width: 100%;
+  max-width: 400px;
+}
+
+.join-form .form-input {
+  text-align: center;
+  font-size: var(--text-xl);
+  padding: 1.25rem;
+}
+
+.join-footer {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.join-note {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: #999;
+}
+
+/* ==========================================================================
+   Session Container
+   ========================================================================== */
+
+.session-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   User Header
+   ========================================================================== */
+
+.user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: #fff;
+  border-bottom: var(--border-width) solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-above);
+}
+
+.user-welcome {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-text {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: #666;
+}
+
+.user-name {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-black);
+}
+
+.user-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.score-label {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: #666;
+  text-transform: uppercase;
+}
+
+.score-value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   User Main Content
+   ========================================================================== */
+
+.user-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   State Views
+   ========================================================================== */
+
+.state-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.state-view.hidden {
+  display: none;
+}
+
+.state-content {
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.state-title {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  color: var(--color-black);
+  margin-bottom: 1rem;
+}
+
+.state-text {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  color: #666;
+}
+
+.state-hint {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: #999;
+  margin-top: 1.5rem;
+}
+
+/* ==========================================================================
+   Waiting State Animation
+   ========================================================================== */
+
+.waiting-animation {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto 2rem;
+}
+
+.pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: pulseOut 2s ease-out infinite;
+}
+
+.pulse-ring:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.pulse-ring:nth-child(3) {
+  animation-delay: 1s;
+}
+
+@keyframes pulseOut {
+  0% {
+    width: 20%;
+    height: 20%;
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   Polling State
+   ========================================================================== */
+
+.keyword-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.keyword-btn {
+  padding: 0.75rem 1.25rem;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  background-color: #fff;
+  border: var(--border-width) solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.keyword-btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.keyword-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.keyword-btn.selected {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.custom-input-container {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.custom-input-container .form-input {
+  flex: 1;
+}
+
+.custom-input-container .btn {
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Quiz State
+   ========================================================================== */
+
+.quiz-timer-display {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 2rem;
+}
+
+.timer-circle {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.timer-bg {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.1);
+  stroke-width: 8;
+}
+
+.timer-progress {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 283;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.timer-progress.warning {
+  stroke: var(--color-error);
+}
+
+.timer-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  color: var(--color-black);
+}
+
+.quiz-prompt {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  color: var(--color-black);
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+}
+
+.quiz-answer-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.quiz-answer-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  background-color: #fff;
+  border: var(--border-width) solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.quiz-answer-btn:hover:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.quiz-answer-btn:active:not(:disabled) {
+  transform: translate(4px, 4px);
+}
+
+.quiz-answer-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.quiz-answer-btn.selected {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.quiz-answer-btn.correct {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.quiz-answer-btn.incorrect {
+  background-color: var(--color-error);
+  border-color: var(--color-error);
+  color: #fff;
+}
+
+.answer-letter {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-off-white);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  flex-shrink: 0;
+}
+
+.selected .answer-letter,
+.correct .answer-letter,
+.incorrect .answer-letter {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.answer-text {
+  flex: 1;
+}
+
+.quiz-feedback {
+  margin-top: 1.5rem;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+}
+
+.quiz-feedback.correct {
+  color: var(--color-success);
+}
+
+.quiz-feedback.incorrect {
+  color: var(--color-error);
+}
+
+/* ==========================================================================
+   Leaderboard State
+   ========================================================================== */
+
+.mini-leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.mini-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #fff;
+  border: 2px solid var(--border-color);
+}
+
+.mini-entry.top-3 {
+  border-color: var(--color-lemon);
+  background-color: rgba(255, 229, 0, 0.1);
+}
+
+.mini-rank {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: #666;
+  width: 30px;
+}
+
+.top-3 .mini-rank {
+  color: var(--color-lemon);
+}
+
+.mini-name {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+}
+
+.mini-score {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-primary);
+}
+
+.your-rank {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  color: #666;
+  margin-top: 1.5rem;
+}
+
+/* ==========================================================================
+   Reaction Bar (Fixed at bottom)
+   ========================================================================== */
+
+.reaction-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  padding: 0.75rem 1rem;
+  background-color: #fff;
+  border-top: var(--border-width) solid var(--border-color);
+  z-index: var(--z-overlay);
+}
+
+.reaction-btn {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-off-white);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 1.5rem;
+}
+
+.reaction-btn:hover {
+  transform: scale(1.1);
+  background-color: var(--color-lemon);
+}
+
+.reaction-btn:active {
+  transform: scale(0.95);
+}
+
+.reaction-btn.sending {
+  animation: reactionPulse 0.3s ease;
+}
+
+@keyframes reactionPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* ==========================================================================
+   Connection Status
+   ========================================================================== */
+
+.connection-status {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #fff;
+  border: 2px solid var(--border-color);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  z-index: var(--z-tooltip);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ccc;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+.status-dot.connected {
+  background-color: var(--color-success);
+  animation: none;
+}
+
+.status-dot.disconnected {
+  background-color: var(--color-error);
+  animation: none;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.status-text {
+  color: #666;
+}
+
+.status-text.connected {
+  color: var(--color-success);
+}
+
+.status-text.disconnected {
+  color: var(--color-error);
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (min-width: 640px) {
+  .join-title {
+    font-size: var(--text-7xl);
+  }
+
+  .quiz-answer-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reaction-bar {
+    max-width: 400px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-left: var(--border-width) solid var(--border-color);
+    border-right: var(--border-width) solid var(--border-color);
+  }
+}
+
+/* ==========================================================================
+   Dark Mode Support
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  .user-page {
+    background-color: var(--color-dark-bg);
+  }
+
+  .join-container {
+    background: linear-gradient(180deg, var(--color-dark-bg) 0%, #2d2d2d 100%);
+  }
+
+  .join-title {
+    color: #fff;
+  }
+
+  .join-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .join-note {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .user-header {
+    background-color: #2d2d2d;
+    border-color: #444;
+  }
+
+  .user-name {
+    color: #fff;
+  }
+
+  .welcome-text {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .score-label {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .state-title {
+    color: #fff;
+  }
+
+  .state-text {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .state-hint {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .quiz-prompt {
+    color: #fff;
+  }
+
+  .keyword-btn {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #fff;
+  }
+
+  .keyword-btn .answer-letter {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .quiz-answer-btn {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #fff;
+  }
+
+  .answer-letter {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .timer-value {
+    color: #fff;
+  }
+
+  .reaction-bar {
+    background-color: #2d2d2d;
+    border-color: #444;
+  }
+
+  .reaction-btn {
+    background-color: #1a1a1a;
+    border-color: #444;
+  }
+
+  .connection-status {
+    background-color: #2d2d2d;
+    border-color: #444;
+  }
+
+  .status-text {
+    color: rgba(255, 255, 255, 0.7);
+  }
+}

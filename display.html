@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnxietyTalk - Display</title>
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/display.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Matter.js for bubble physics -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+  <div class="display-container">
+    <!-- Waiting View -->
+    <div id="waitingView" class="view-container waiting-view active">
+      <div class="waiting-content">
+        <h1 class="waiting-title">ANXIETY TALK</h1>
+        <div class="waiting-animations">
+          <div class="waiting-bubble bubble-1"></div>
+          <div class="waiting-bubble bubble-2"></div>
+          <div class="waiting-bubble bubble-3"></div>
+          <div class="waiting-bubble bubble-4"></div>
+        </div>
+        <p class="waiting-text">Waiting for session to start...</p>
+        <p class="waiting-instruction">Scan the QR code to join</p>
+      </div>
+    </div>
+
+    <!-- Polling View -->
+    <div id="pollingView" class="view-container polling-view hidden">
+      <div class="polling-header">
+        <h2 class="polling-prompt" id="pollingPrompt">Loading question...</h2>
+      </div>
+      <div class="polling-body">
+        <div id="bubbleCanvas" class="bubble-canvas"></div>
+      </div>
+      <div class="polling-stats">
+        <span class="stat-item">
+          <span class="stat-number" id="pollingResponses">0</span>
+          <span class="stat-label">Responses</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Quiz View -->
+    <div id="quizView" class="view-container quiz-view hidden">
+      <div class="quiz-header">
+        <div class="quiz-timer-bar">
+          <div class="timer-fill" id="timerFill"></div>
+        </div>
+        <div class="timer-text" id="timerText">30</div>
+      </div>
+      <div class="quiz-body">
+        <div class="quiz-content" id="quizContent">
+          <h2 class="quiz-question" id="quizQuestion">Loading question...</h2>
+          <div class="quiz-options" id="quizOptions">
+            <div class="quiz-option" data-option="A">
+              <span class="option-letter">A</span>
+              <span class="option-text" id="optionAText">Option A</span>
+            </div>
+            <div class="quiz-option" data-option="B">
+              <span class="option-letter">B</span>
+              <span class="option-text" id="optionBText">Option B</span>
+            </div>
+            <div class="quiz-option" data-option="C">
+              <span class="option-letter">C</span>
+              <span class="option-text" id="optionCText">Option C</span>
+            </div>
+            <div class="quiz-option" data-option="D">
+              <span class="option-letter">D</span>
+              <span class="option-text" id="optionDText">Option D</span>
+            </div>
+          </div>
+        </div>
+        <div class="quiz-results-overlay hidden" id="quizResultsOverlay">
+          <h2 class="results-title">Time's Up!</h2>
+          <div class="results-grid" id="resultsGrid">
+            <!-- Results will be populated dynamically -->
+          </div>
+          <p class="results-correct" id="resultsCorrect"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard View -->
+    <div id="leaderboardView" class="view-container leaderboard-view hidden">
+      <div class="leaderboard-header">
+        <h2 class="leaderboard-title">LEADERBOARD</h2>
+      </div>
+      <div class="leaderboard-body">
+        <div class="leaderboard-list" id="leaderboardList">
+          <!-- Leaderboard entries will be populated dynamically -->
+        </div>
+      </div>
+      <div class="confetti-container" id="confettiContainer"></div>
+    </div>
+
+    <!-- Closed View -->
+    <div id="closedView" class="view-container closed-view hidden">
+      <div class="closed-content">
+        <h1 class="closed-title">SESSION CLOSED</h1>
+        <p class="closed-text">Thank you for participating!</p>
+        <div class="closed-animations">
+          <div class="closed-bubble bubble-1"></div>
+          <div class="closed-bubble bubble-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reaction Container (floating emojis) -->
+    <div class="reaction-container" id="reactionContainer"></div>
+  </div>
+
+  <!-- Firebase SDKs (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+
+  <!-- Display JS -->
+  <script src="js/display.js"></script>
+</body>
+</html>

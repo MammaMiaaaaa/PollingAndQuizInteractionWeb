@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnxietyTalk - Role Selection</title>
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/components.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Page-specific styles */
+    .role-selection-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background-color: var(--color-off-white);
+    }
+
+    .role-selection-title {
+      font-family: var(--font-display);
+      font-size: var(--text-8xl);
+      color: var(--color-black);
+      text-align: center;
+      margin-bottom: 3rem;
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+
+    .role-selection-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .role-selection-buttons .btn {
+      width: 100%;
+      padding: 1.25rem 2rem;
+      font-size: 1.5rem;
+    }
+
+    .role-selection-subtitle {
+      font-family: var(--font-body);
+      font-size: var(--text-lg);
+      color: var(--color-black);
+      text-align: center;
+      margin-top: 3rem;
+      opacity: 0.7;
+    }
+
+    /* Background decoration */
+    .bg-decoration {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 3px solid var(--color-black);
+    }
+
+    .bg-circle-1 {
+      width: 300px;
+      height: 300px;
+      background-color: var(--color-lemon);
+      top: -100px;
+      right: -100px;
+    }
+
+    .bg-circle-2 {
+      width: 200px;
+      height: 200px;
+      background-color: var(--color-hot-pink);
+      bottom: -50px;
+      left: -50px;
+    }
+
+    .bg-circle-3 {
+      width: 150px;
+      height: 150px;
+      background-color: var(--color-primary);
+      bottom: 20%;
+      right: 10%;
+    }
+
+    @media (min-width: 768px) {
+      .role-selection-title {
+        font-size: 10rem;
+      }
+
+      .role-selection-buttons {
+        flex-direction: row;
+        max-width: 900px;
+      }
+
+      .role-selection-buttons .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background decoration -->
+  <div class="bg-decoration">
+    <div class="bg-circle bg-circle-1"></div>
+    <div class="bg-circle bg-circle-2"></div>
+    <div class="bg-circle bg-circle-3"></div>
+  </div>
+
+  <main class="role-selection-container">
+    <h1 class="role-selection-title">ANXIETY TALK</h1>
+
+    <div class="role-selection-buttons">
+      <a href="admin.html" class="btn btn-primary">Admin</a>
+      <a href="display.html" class="btn btn-secondary">Display</a>
+      <a href="join.html" class="btn btn-success">Join</a>
+    </div>
+
+    <p class="role-selection-subtitle">Select your role to get started</p>
+  </main>
+
+  <!-- Firebase SDKs (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+</body>
+</html>

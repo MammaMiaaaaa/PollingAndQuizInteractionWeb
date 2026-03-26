@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnxietyTalk - Admin Panel</title>
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/admin.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- QRCode.js for QR code generation -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <!-- bcrypt.js for password hashing -->
+  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-card card">
+      <div class="card-header">
+        <h1 class="text-h2">ADMIN LOGIN</h1>
+      </div>
+      <div class="card-body">
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="passwordInput" class="form-label">Password</label>
+            <input
+              type="password"
+              id="passwordInput"
+              class="form-input"
+              placeholder="Enter admin password"
+              required
+            >
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Login</button>
+          <p id="loginError" class="form-error hidden mt-md">Incorrect password. Please try again.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="adminDashboard" class="admin-container hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1 class="text-h3">ANXIETY TALK</h1>
+        <span class="text-label">Admin Panel</span>
+      </div>
+
+      <!-- Session Status Badge -->
+      <div id="sessionStatusBadge" class="session-status-badge">
+        <span class="badge badge-closed">Session Closed</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-section="session">
+          <span class="nav-icon">S</span>
+          <span class="nav-text">Session</span>
+        </button>
+        <button class="nav-item" data-section="polling">
+          <span class="nav-icon">P</span>
+          <span class="nav-text">Polling</span>
+        </button>
+        <button class="nav-item" data-section="quiz">
+          <span class="nav-icon">Q</span>
+          <span class="nav-text">Quiz</span>
+        </button>
+        <button class="nav-item" data-section="users">
+          <span class="nav-icon">U</span>
+          <span class="nav-text">Users</span>
+        </button>
+        <button class="nav-item" data-section="settings">
+          <span class="nav-icon">*</span>
+          <span class="nav-text">Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-count-display">
+          <span class="user-count-number" id="userCount">0</span>
+          <span class="user-count-label">Users Connected</span>
+        </div>
+        <button id="logoutBtn" class="btn btn-secondary btn-sm w-full mt-md">Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="admin-main">
+      <!-- QR Code Section -->
+      <div class="qr-section card">
+        <div class="card-header">
+          <h2 class="text-h3">Join Session</h2>
+        </div>
+        <div class="card-body">
+          <div class="qr-container" id="qrContainer">
+            <!-- QR code will be generated here -->
+          </div>
+          <p class="qr-instruction text-center mt-md">
+            Scan to join: <strong id="joinUrl">/join.html</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Session Section -->
+      <section id="sessionSection" class="admin-section">
+        <div class="section-header">
+          <h2 class="text-h2">Session Control</h2>
+        </div>
+        <div class="section-content">
+          <div class="control-buttons">
+            <button id="startSessionBtn" class="btn btn-success btn-lg">Start Session</button>
+            <button id="closeSessionBtn" class="btn btn-danger btn-lg" disabled>Close Session</button>
+          </div>
+          <div class="session-info mt-lg">
+            <div class="info-item">
+              <span class="info-label">Session ID:</span>
+              <span class="info-value" id="sessionId">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Status:</span>
+              <span class="info-value" id="sessionStatus">Closed</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Current View:</span>
+              <span class="info-value" id="currentView">Waiting</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Polling Section -->
+      <section id="pollingSection" class="admin-section hidden">
+        <div class="section-header">
+          <h2 class="text-h2">Polling Control</h2>
+        </div>
+        <div class="section-content">
+          <div class="form-group">
+            <label for="pollingPrompt" class="form-label">Poll Prompt</label>
+            <input
+              type="text"
+              id="pollingPrompt"
+              class="form-input"
+              placeholder="Ask a question..."
+            >
+          </div>
+          <div class="form-group">
+            <label for="pollingKeywords" class="form-label">Keywords (comma-separated)</label>
+            <input
+              type="text"
+              id="pollingKeywords"
+              class="form-input"
+              placeholder="anxious, stressed, calm, happy"
+            >
+          </div>
+          <div class="control-buttons mt-lg">
+            <button id="startPollingBtn" class="btn btn-primary btn-lg">Start Polling</button>
+            <button id="stopPollingBtn" class="btn btn-danger btn-lg" disabled>Stop Polling</button>
+          </div>
+          <div class="polling-results mt-lg">
+            <h3 class="text-h3 mb-md">Live Results</h3>
+            <div id="pollingResultsContainer" class="polling-results-list">
+              <!-- Polling results will appear here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quiz Section -->
+      <section id="quizSection" class="admin-section hidden">
+        <div class="section-header">
+          <h2 class="text-h2">Quiz Control</h2>
+        </div>
+        <div class="section-content">
+          <div class="form-group">
+            <label for="quizQuestion" class="form-label">Question</label>
+            <input
+              type="text"
+              id="quizQuestion"
+              class="form-input"
+              placeholder="Enter quiz question..."
+            >
+          </div>
+          <div class="quiz-options-grid">
+            <div class="form-group">
+              <label for="quizOptionA" class="form-label">Option A</label>
+              <input
+                type="text"
+                id="quizOptionA"
+                class="form-input"
+                placeholder="First option"
+              >
+            </div>
+            <div class="form-group">
+              <label for="quizOptionB" class="form-label">Option B</label>
+              <input
+                type="text"
+                id="quizOptionB"
+                class="form-input"
+                placeholder="Second option"
+              >
+            </div>
+            <div class="form-group">
+              <label for="quizOptionC" class="form-label">Option C</label>
+              <input
+                type="text"
+                id="quizOptionC"
+                class="form-input"
+                placeholder="Third option"
+              >
+            </div>
+            <div class="form-group">
+              <label for="quizOptionD" class="form-label">Option D</label>
+              <input
+                type="text"
+                id="quizOptionD"
+                class="form-input"
+                placeholder="Fourth option"
+              >
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="correctAnswer" class="form-label">Correct Answer</label>
+            <select id="correctAnswer" class="form-input">
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="quizTimer" class="form-label">Timer (seconds)</label>
+            <input
+              type="number"
+              id="quizTimer"
+              class="form-input"
+              value="30"
+              min="5"
+              max="120"
+            >
+          </div>
+          <div class="control-buttons mt-lg">
+            <button id="startQuizBtn" class="btn btn-primary btn-lg">Start Quiz</button>
+            <button id="stopQuizBtn" class="btn btn-danger btn-lg" disabled>Stop Quiz</button>
+            <button id="showLeaderboardBtn" class="btn btn-success btn-lg" disabled>Show Leaderboard</button>
+          </div>
+          <div class="quiz-results mt-lg">
+            <h3 class="text-h3 mb-md">Quiz Results</h3>
+            <div id="quizResultsContainer" class="quiz-results-grid">
+              <div class="quiz-result-item" data-answer="A">
+                <span class="result-label">A:</span>
+                <span class="result-count" id="resultA">0</span>
+              </div>
+              <div class="quiz-result-item" data-answer="B">
+                <span class="result-label">B:</span>
+                <span class="result-count" id="resultB">0</span>
+              </div>
+              <div class="quiz-result-item" data-answer="C">
+                <span class="result-label">C:</span>
+                <span class="result-count" id="resultC">0</span>
+              </div>
+              <div class="quiz-result-item" data-answer="D">
+                <span class="result-label">D:</span>
+                <span class="result-count" id="resultD">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Users Section -->
+      <section id="usersSection" class="admin-section hidden">
+        <div class="section-header">
+          <h2 class="text-h2">Connected Users</h2>
+        </div>
+        <div class="section-content">
+          <div class="users-list" id="usersList">
+            <!-- Users will be listed here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="settingsSection" class="admin-section hidden">
+        <div class="section-header">
+          <h2 class="text-h2">Settings</h2>
+        </div>
+        <div class="section-content">
+          <div class="form-group">
+            <label for="adminPassword" class="form-label">Change Admin Password</label>
+            <input
+              type="password"
+              id="adminPassword"
+              class="form-input"
+              placeholder="Enter new password"
+            >
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              class="form-input"
+              placeholder="Confirm new password"
+            >
+          </div>
+          <button id="updatePasswordBtn" class="btn btn-primary mt-md">Update Password</button>
+
+          <div class="settings-divider"></div>
+
+          <div class="form-group">
+            <label class="form-label">Session Configuration</label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="allowAnonymous" checked>
+                Allow anonymous users
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="enableReactions" checked>
+                Enable reactions
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="enableLeaderboard" checked>
+                Show leaderboard
+              </label>
+            </div>
+          </div>
+
+          <button id="resetLeaderboardBtn" class="btn btn-danger mt-lg">Reset Leaderboard</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Firebase SDKs (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+
+  <!-- Admin JS -->
+  <script src="js/admin.js"></script>
+</body>
+</html>
