@@ -67,6 +67,8 @@
   var sessionSettings = null;
   var hasAnsweredPoll = false;
   var hasAnsweredQuiz = false;
+  var pollAnswerCount = 0;
+  var quizQuestionStartTime = 0;
   var quizTimerInterval = null;
 
   var reactionBarInstance = null;
@@ -422,22 +424,21 @@
     var questions = pollingConfig.questions || [];
     var currentIndex = pollingConfig.currentIndex || 0;
 
-    // Get current question
     var question = questions[currentIndex];
 
-    // Update poll prompt
     if (pollPrompt && question) {
       pollPrompt.textContent = question;
     }
 
-    // Reset poll answered flag
+    pollAnswerCount = 0;
     hasAnsweredPoll = false;
 
-    // Generate keyword buttons
-    generateKeywordButtons();
+    if (customKeywordInput) customKeywordInput.disabled = false;
+    if (sendCustomKeyword) sendCustomKeyword.disabled = false;
 
-    // Setup custom keyword input
+    generateKeywordButtons();
     setupCustomKeywordInput();
+    updatePollCounter(0, questions.length, currentIndex);
   }
 
   /**
@@ -494,22 +495,35 @@
    * @param {string} text - Answer text
    */
   function sendPollAnswer(text) {
-    if (!currentUser || hasAnsweredPoll) return;
+    if (!currentUser) return;
 
-    hasAnsweredPoll = true;
+    var maxAnswers = (sessionSettings && sessionSettings.defaultSettings && sessionSettings.defaultSettings.maxPollAnswers) || 3;
+    if (pollAnswerCount >= maxAnswers) return;
 
-    User.addPollingAnswer(currentUser.userId, 'current', text).then(function() {
-      console.log('Poll answer sent:', text);
+    var state = Session.getState();
+    var questionIndex = (state.pollingConfig || {}).currentIndex || 0;
+
+    pollAnswerCount++;
+    hasAnsweredPoll = pollAnswerCount >= maxAnswers;
+
+    User.addPollingAnswer(currentUser.userId, questionIndex, text).then(function() {
+      console.log('[User] Poll answer sent to RTDB:', text, 'questionIndex:', questionIndex);
       updateUserScore();
 
-      // Visual feedback
-      if (pollPrompt) {
-        pollPrompt.textContent = 'Answer sent!';
+      if (hasAnsweredPoll) {
+        if (pollPrompt) {
+          pollPrompt.textContent = 'You have sent all answers!';
+        }
+        if (customKeywordInput) customKeywordInput.disabled = true;
+        if (sendCustomKeyword) sendCustomKeyword.disabled = true;
+      } else if (pollPrompt) {
+        pollPrompt.textContent = 'Answer sent! (' + pollAnswerCount + '/' + maxAnswers + ')';
       }
 
     }).catch(function(error) {
-      console.error('Failed to send poll answer:', error);
-      hasAnsweredPoll = false; // Allow retry
+      console.error('[User] Failed to send poll answer:', error);
+      pollAnswerCount--;
+      hasAnsweredPoll = pollAnswerCount >= maxAnswers;
     });
   }
 
@@ -537,14 +551,15 @@
       return;
     }
 
-    // Check if answer should be revealed
     if (revealed) {
-      showQuizResult(question, null, true);
+      if (!hasAnsweredQuiz) {
+        showQuizResult(question, null, true, 0);
+      }
       return;
     }
 
-    // Show new question
     showQuizQuestion(question, timeLimit);
+    quizQuestionStartTime = Date.now();
   }
 
   /**
@@ -628,7 +643,11 @@
       // Time's up
       if (remaining <= 0) {
         stopQuizTimer();
-        showQuizResult(question, null, true); // Show correct answer, no selection
+        var state = Session.getState();
+        var quizConfig = state.quizConfig || {};
+        var questions = quizConfig.questions || [];
+        var question = questions[quizConfig.currentIndex || 0];
+        if (question) showQuizResult(question, null, true, 0);
       }
     }, 1000);
   }
@@ -653,7 +672,6 @@
     hasAnsweredQuiz = true;
     stopQuizTimer();
 
-    // Disable all buttons
     if (quizAnswerButtons) {
       var buttons = quizAnswerButtons.querySelectorAll('.quiz-answer-btn');
       buttons.forEach(function(btn) {
@@ -661,21 +679,26 @@
       });
     }
 
-    // Get current question from session state
     var state = Session.getState();
     var quizConfig = state.quizConfig || {};
     var questions = quizConfig.questions || [];
     var question = questions[quizConfig.currentIndex || 0];
+    var timeLimit = quizConfig.timePerQuestion || 30;
+    var questionIndex = quizConfig.currentIndex || 0;
 
-    // Submit answer to Firestore
-    submitQuizAnswer(index, question);
-
-    // Calculate points (simplified - actual calculation done server-side)
     var isCorrect = index === question.correctIndex;
-    var points = isCorrect ? 1000 : 0;
+    var points = 0;
 
-    // Show result
-    showQuizResult(question, index, false);
+    if (isCorrect) {
+      var elapsed = Math.floor((Date.now() - quizQuestionStartTime) / 1000);
+      var timeRemaining = Math.max(0, timeLimit - elapsed);
+      var baseScore = 1000;
+      var speedBonus = Math.floor(500 * (timeRemaining / timeLimit));
+      points = baseScore + speedBonus;
+    }
+
+    submitQuizAnswer(index, question, questionIndex, points);
+    showQuizResult(question, index, false, points);
   }
 
   /**
@@ -683,22 +706,22 @@
    * @param {number} selectedIndex - Selected option index
    * @param {Object} question - Question object
    */
-  function submitQuizAnswer(selectedIndex, question) {
+  function submitQuizAnswer(selectedIndex, question, questionIndex, points) {
     var answerData = {
       userId: currentUser.userId,
-      questionId: 'current',
+      questionIndex: questionIndex,
       selectedIndex: selectedIndex,
       isCorrect: selectedIndex === question.correctIndex,
-      submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      pointsEarned: points,
+      submittedAt: firebase.database.ServerValue.TIMESTAMP
     };
 
-    quizAnswersRef.add(answerData).then(function() {
+    quizAnswersRef.push(answerData).then(function() {
       console.log('Quiz answer submitted');
       updateUserScore();
 
-      // Award points if correct
-      if (selectedIndex === question.correctIndex) {
-        User.updateUserPoints(currentUser.userId, 'quiz', 1000);
+      if (selectedIndex === question.correctIndex && points > 0) {
+        User.updateUserPoints(currentUser.userId, 'quiz', points);
       }
 
     }).catch(function(error) {
@@ -712,13 +735,12 @@
    * @param {number|null} selectedIndex - Selected index or null if time up
    * @param {boolean} timedUp - Whether time ran out
    */
-  function showQuizResult(question, selectedIndex, timedUp) {
+  function showQuizResult(question, selectedIndex, timedUp, points) {
     stopQuizTimer();
 
+    if (typeof points === 'undefined') points = 0;
     var isCorrect = selectedIndex !== null && selectedIndex === question.correctIndex;
-    var points = isCorrect ? 1000 : 0;
 
-    // Highlight buttons
     if (quizAnswerButtons) {
       var buttons = quizAnswerButtons.querySelectorAll('.quiz-answer-btn');
       buttons.forEach(function(btn, index) {
@@ -732,7 +754,6 @@
       });
     }
 
-    // Show feedback
     if (quizFeedback) {
       quizFeedback.classList.remove('hidden');
       if (timedUp) {

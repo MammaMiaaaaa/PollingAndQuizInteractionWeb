@@ -25,7 +25,7 @@ var DEFAULT_EMOJIS = ['😰', '😤', '😢', '😅', '🙏'];
  * Points awarded per reaction
  * @type {number}
  */
-var REACTION_POINTS = 10;
+var REACTION_POINTS = 1;
 
 /**
  * Animation duration in milliseconds
@@ -43,7 +43,7 @@ var REACTIONS_PATH = 'reactions';
  * Points awarded per reaction sent
  * @type {number}
  */
-var POINTS_PER_REACTION = 10;
+var POINTS_PER_REACTION = 1;
 
 (function(window) {
   'use strict';

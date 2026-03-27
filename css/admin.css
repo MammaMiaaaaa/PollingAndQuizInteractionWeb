@@ -15,6 +15,11 @@
   padding: 2rem;
 }
 
+/* Override hidden class */
+.login-container.hidden {
+  display: none !important;
+}
+
 .login-card {
   width: 100%;
   max-width: 400px;
@@ -38,6 +43,11 @@
   display: flex;
   min-height: 100vh;
   background-color: var(--color-off-white);
+}
+
+/* Override hidden class - make sure it hides even with display:flex */
+.admin-container.hidden {
+  display: none !important;
 }
 
 /* ==========================================================================
@@ -410,6 +420,73 @@
 
 .status-indicator.answering {
   background-color: var(--color-quiz-blue);
+}
+
+/* ==========================================================================
+   Question List
+   ========================================================================== */
+
+.question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.question-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-off-white);
+  border: var(--border-width) solid var(--border-color);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+}
+
+.question-list-item.active {
+  border-color: var(--color-primary);
+  background-color: rgba(255, 107, 43, 0.1);
+}
+
+.question-list-item .question-index {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--color-primary);
+  width: 30px;
+  flex-shrink: 0;
+}
+
+.question-list-item .question-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.question-list-item .question-delete {
+  background: none;
+  border: 2px solid var(--color-error);
+  color: var(--color-error);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.question-list-item .question-delete:hover {
+  background-color: var(--color-error);
+  color: #fff;
+}
+
+.polling-active {
+  padding: 1rem;
+  background-color: var(--color-off-white);
+  border: var(--border-width) solid var(--border-color);
 }
 
 /* ==========================================================================

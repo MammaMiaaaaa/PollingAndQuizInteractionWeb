@@ -65,8 +65,10 @@
   var currentQuestionIndex = 0;
   var timerInterval = null;
 
-  var pollingUnsubscribe = null;
-  var quizUnsubscribe = null;
+  var pollingListenerActive = false;
+  var quizListenerActive = false;
+  var pollAnswerCount = 0;
+  var quizAnswerCounts = { A: 0, B: 0, C: 0, D: 0 };
 
   // ==========================================================================
   // Initialization
@@ -76,8 +78,11 @@
    * Initialize the display screen
    */
   function init() {
+    console.log('Display init starting...');
+
     // Initialize BubbleCloud for polling
     if (bubbleCanvas) {
+      console.log('Initializing BubbleCloud...');
       bubbleCloud = new BubbleCloud('bubbleCanvas');
     }
 
@@ -122,9 +127,12 @@
     var state = payload.state;
     var action = payload.action;
 
+    console.log('Session change:', state.status, 'action:', action);
+
     // Only process if status changed
     if (state.status !== currentStatus) {
       currentStatus = state.status;
+      console.log('Switching to view:', state.status);
       switchView(state.status);
     }
 
@@ -245,18 +253,30 @@
       pollingPrompt.textContent = question;
     }
 
+    // Fix canvas dimensions — BubbleCloud was init'd while view was hidden (display:none),
+    // so getBoundingClientRect returned 0x0. Re-measure now that the view is visible.
+    if (bubbleCloud) {
+      requestAnimationFrame(function() {
+        bubbleCloud.resize();
+      });
+    }
+
     // Clear existing bubbles when starting new polling
     if (bubbleCloud && (action === 'switchToPolling' || action === 'setActivePollingQuestion')) {
       bubbleCloud.clear();
+      pollAnswerCount = 0;
+      if (pollingResponses) {
+        pollingResponses.textContent = '0';
+      }
     }
 
     // Reset responses count
-    if (pollingResponses) {
-      pollingResponses.textContent = '0';
+    if (action === 'switchToPolling' || action === 'setActivePollingQuestion') {
+      pollAnswerCount = 0;
     }
 
     // Setup polling listener if not already set up
-    if (!pollingUnsubscribe) {
+    if (!pollingListenerActive) {
       setupPollingListener();
     }
   }
@@ -265,31 +285,37 @@
    * Setup real-time listener for polling answers
    */
   function setupPollingListener() {
-    if (pollingUnsubscribe) {
-      pollingUnsubscribe();
+    if (pollingListenerActive) {
+      pollingAnswersRef.off('child_added');
     }
 
-    pollingUnsubscribe = pollingAnswersRef.onSnapshot(function(snapshot) {
-      var count = snapshot.size;
+    pollAnswerCount = 0;
+    pollingListenerActive = true;
 
-      // Update response count
-      if (pollingResponses) {
-        pollingResponses.textContent = count;
-      }
+    var state = Session.getState();
+    var currentIndex = (state.pollingConfig || {}).currentIndex || 0;
 
-      // Add new bubbles for answers
-      if (bubbleCloud) {
-        snapshot.docs.forEach(function(doc) {
-          var answer = doc.data();
-          if (answer.text) {
-            // Add bubble with random color selection
-            bubbleCloud.addBubble(answer.text, answer.userId || 'anonymous');
-          }
-        });
-      }
-    }, function(error) {
-      console.error('Polling listener error:', error);
-    });
+    console.log('[Display] Setting up polling listener, questionIndex:', currentIndex);
+
+    pollingAnswersRef
+      .orderByChild('questionIndex')
+      .equalTo(currentIndex)
+      .on('child_added', function(snapshot) {
+        var answer = snapshot.val();
+        console.log('[Display] Poll answer received:', answer);
+        if (!answer || !answer.text) return;
+
+        if (bubbleCloud) {
+          bubbleCloud.addBubble(answer.text, answer.userId || 'anonymous');
+        }
+
+        pollAnswerCount++;
+        if (pollingResponses) {
+          pollingResponses.textContent = pollAnswerCount;
+        }
+      }, function(error) {
+        console.error('[Display] Polling listener error:', error);
+      });
   }
 
   // ==========================================================================
@@ -479,33 +505,36 @@
    * Setup real-time listener for quiz answers
    */
   function setupQuizListener() {
-    if (quizUnsubscribe) {
-      quizUnsubscribe();
+    if (quizListenerActive) {
+      quizAnswersRef.off('child_added');
     }
 
-    quizUnsubscribe = quizAnswersRef.onSnapshot(function(snapshot) {
-      var counts = { A: 0, B: 0, C: 0, D: 0 };
+    quizAnswerCounts = { A: 0, B: 0, C: 0, D: 0 };
+    quizListenerActive = true;
 
-      snapshot.docs.forEach(function(doc) {
-        var answer = doc.data();
-        if (typeof answer.selectedIndex === 'number') {
-          var option = ['A', 'B', 'C', 'D'][answer.selectedIndex];
-          if (option && counts.hasOwnProperty(option)) {
-            counts[option]++;
+    console.log('Setting up quiz listener on RTDB:', quizAnswersRef.path);
+
+    quizAnswersRef
+      .orderByChild('questionIndex')
+      .equalTo((Session.getState().quizConfig || {}).currentIndex || 0)
+      .on('child_added', function(snapshot) {
+        var answer = snapshot.val();
+        if (!answer || typeof answer.selectedIndex !== 'number') return;
+
+        var option = ['A', 'B', 'C', 'D'][answer.selectedIndex];
+        if (option && quizAnswerCounts.hasOwnProperty(option)) {
+          quizAnswerCounts[option]++;
+        }
+
+        Object.keys(quizAnswerCounts).forEach(function(opt) {
+          var el = document.getElementById('result' + opt);
+          if (el) {
+            el.textContent = quizAnswerCounts[opt];
           }
-        }
+        });
+      }, function(error) {
+        console.error('Quiz listener error:', error);
       });
-
-      // Update result counts in UI
-      Object.keys(counts).forEach(function(option) {
-        var el = document.getElementById('result' + option);
-        if (el) {
-          el.textContent = counts[option];
-        }
-      });
-    }, function(error) {
-      console.error('Quiz listener error:', error);
-    });
   }
 
   // ==========================================================================

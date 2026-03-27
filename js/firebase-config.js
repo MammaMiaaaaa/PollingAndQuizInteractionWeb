@@ -13,13 +13,13 @@
 // Firebase configuration object
 // Replace these placeholder values with your actual Firebase project values
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAk7u32qQqr_8Gf8AdtsIUrXSWv8VtpTY8",
+  authDomain: "pollingandquizweb.firebaseapp.com",
+  databaseURL: "https://pollingandquizweb-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "pollingandquizweb",
+  storageBucket: "pollingandquizweb.firebasestorage.app",
+  messagingSenderId: "390099329616",
+  appId: "1:390099329616:web:d12c8834fda68051c8e755"
 };
 
 // Initialize Firebase
@@ -34,6 +34,8 @@ const rtdb = firebase.database();
 // Collection/Node references for Firestore
 const sessionRef = db.collection('session').doc('current');
 const usersRef = db.collection('users');
-const pollingAnswersRef = db.collection('pollingAnswers');
-const reactionsRef = db.collection('reactions');
-const quizAnswersRef = db.collection('quizAnswers');
+
+// Realtime Database references for real-time collections
+const pollingAnswersRef = rtdb.ref('pollingAnswers');
+const quizAnswersRef = rtdb.ref('quizAnswers');
+const reactionsRef = rtdb.ref('reactions');

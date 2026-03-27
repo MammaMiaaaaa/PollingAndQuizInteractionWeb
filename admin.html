@@ -144,33 +144,42 @@
           <h2 class="text-h2">Polling Control</h2>
         </div>
         <div class="section-content">
-          <div class="form-group">
-            <label for="pollingPrompt" class="form-label">Poll Prompt</label>
+          <!-- Question List -->
+          <div id="pollingQuestionList" class="question-list"></div>
+
+          <!-- Add Question Form -->
+          <div class="form-group mt-lg">
+            <label for="newPollingQuestion" class="form-label">Add New Question</label>
             <input
               type="text"
-              id="pollingPrompt"
+              id="newPollingQuestion"
               class="form-input"
               placeholder="Ask a question..."
+              maxlength="200"
             >
+            <button id="addPollingQuestionBtn" class="btn btn-primary mt-sm">Add Question</button>
           </div>
-          <div class="form-group">
-            <label for="pollingKeywords" class="form-label">Keywords (comma-separated)</label>
-            <input
-              type="text"
-              id="pollingKeywords"
-              class="form-input"
-              placeholder="anxious, stressed, calm, happy"
-            >
+
+          <!-- Active Question Navigation -->
+          <div class="polling-active mt-lg">
+            <p class="text-label mb-sm">Active Question:</p>
+            <p id="activePollingQuestion" class="text-h3 mb-md">No questions yet</p>
+            <div class="control-buttons">
+              <button id="prevPollingQBtn" class="btn btn-secondary" disabled>Prev</button>
+              <span id="pollingQIndex" class="text-label">0 / 0</span>
+              <button id="nextPollingQBtn" class="btn btn-secondary" disabled>Next</button>
+            </div>
           </div>
+
+          <!-- Start/Stop -->
           <div class="control-buttons mt-lg">
-            <button id="startPollingBtn" class="btn btn-primary btn-lg">Start Polling</button>
+            <button id="startPollingBtn" class="btn btn-primary btn-lg" disabled>Start Polling</button>
             <button id="stopPollingBtn" class="btn btn-danger btn-lg" disabled>Stop Polling</button>
           </div>
+
           <div class="polling-results mt-lg">
             <h3 class="text-h3 mb-md">Live Results</h3>
-            <div id="pollingResultsContainer" class="polling-results-list">
-              <!-- Polling results will appear here -->
-            </div>
+            <div id="pollingResultsContainer" class="polling-results-list"></div>
           </div>
         </div>
       </section>
@@ -181,51 +190,37 @@
           <h2 class="text-h2">Quiz Control</h2>
         </div>
         <div class="section-content">
+          <!-- Question List -->
+          <div id="quizQuestionList" class="question-list"></div>
+
+          <!-- Add Question Form -->
+          <div class="settings-divider"></div>
           <div class="form-group">
-            <label for="quizQuestion" class="form-label">Question</label>
+            <label for="quizQuestion" class="form-label">Add New Question</label>
             <input
               type="text"
               id="quizQuestion"
               class="form-input"
               placeholder="Enter quiz question..."
+              maxlength="250"
             >
           </div>
           <div class="quiz-options-grid">
             <div class="form-group">
               <label for="quizOptionA" class="form-label">Option A</label>
-              <input
-                type="text"
-                id="quizOptionA"
-                class="form-input"
-                placeholder="First option"
-              >
+              <input type="text" id="quizOptionA" class="form-input" placeholder="First option" maxlength="100">
             </div>
             <div class="form-group">
               <label for="quizOptionB" class="form-label">Option B</label>
-              <input
-                type="text"
-                id="quizOptionB"
-                class="form-input"
-                placeholder="Second option"
-              >
+              <input type="text" id="quizOptionB" class="form-input" placeholder="Second option" maxlength="100">
             </div>
             <div class="form-group">
               <label for="quizOptionC" class="form-label">Option C</label>
-              <input
-                type="text"
-                id="quizOptionC"
-                class="form-input"
-                placeholder="Third option"
-              >
+              <input type="text" id="quizOptionC" class="form-input" placeholder="Third option" maxlength="100">
             </div>
             <div class="form-group">
               <label for="quizOptionD" class="form-label">Option D</label>
-              <input
-                type="text"
-                id="quizOptionD"
-                class="form-input"
-                placeholder="Fourth option"
-              >
+              <input type="text" id="quizOptionD" class="form-input" placeholder="Fourth option" maxlength="100">
             </div>
           </div>
           <div class="form-group">
@@ -243,16 +238,30 @@
               type="number"
               id="quizTimer"
               class="form-input"
-              value="30"
+              value="20"
               min="5"
               max="120"
             >
           </div>
+          <button id="addQuizQuestionBtn" class="btn btn-primary mt-sm">Add Question</button>
+
+          <!-- Active Question -->
+          <div class="settings-divider"></div>
+          <div class="polling-active">
+            <p class="text-label mb-sm">Active Question:</p>
+            <p id="activeQuizQuestion" class="text-h3 mb-md">No questions yet</p>
+            <span id="quizQIndex" class="text-label">0 / 0</span>
+          </div>
+
+          <!-- Quiz Controls -->
           <div class="control-buttons mt-lg">
-            <button id="startQuizBtn" class="btn btn-primary btn-lg">Start Quiz</button>
-            <button id="stopQuizBtn" class="btn btn-danger btn-lg" disabled>Stop Quiz</button>
+            <button id="startQuizBtn" class="btn btn-primary btn-lg" disabled>Start Quiz</button>
+            <button id="revealAnswerBtn" class="btn btn-secondary btn-lg" disabled>Reveal Answer</button>
+            <button id="nextQuizQBtn" class="btn btn-secondary btn-lg" disabled>Next Question</button>
+            <button id="stopQuizBtn" class="btn btn-danger btn-lg" disabled>End Quiz</button>
             <button id="showLeaderboardBtn" class="btn btn-success btn-lg" disabled>Show Leaderboard</button>
           </div>
+
           <div class="quiz-results mt-lg">
             <h3 class="text-h3 mb-md">Quiz Results</h3>
             <div id="quizResultsContainer" class="quiz-results-grid">
@@ -296,7 +305,16 @@
         </div>
         <div class="section-content">
           <div class="form-group">
-            <label for="adminPassword" class="form-label">Change Admin Password</label>
+            <label for="oldPassword" class="form-label">Current Password</label>
+            <input
+              type="password"
+              id="oldPassword"
+              class="form-input"
+              placeholder="Enter current password"
+            >
+          </div>
+          <div class="form-group">
+            <label for="adminPassword" class="form-label">New Password</label>
             <input
               type="password"
               id="adminPassword"
@@ -305,7 +323,7 @@
             >
           </div>
           <div class="form-group">
-            <label for="confirmPassword" class="form-label">Confirm Password</label>
+            <label for="confirmPassword" class="form-label">Confirm New Password</label>
             <input
               type="password"
               id="confirmPassword"
@@ -349,6 +367,12 @@
 
   <!-- Firebase Config -->
   <script src="js/firebase-config.js"></script>
+
+  <!-- Auth Module (defines Auth) -->
+  <script src="js/auth.js"></script>
+
+  <!-- Session Module (defines Session) -->
+  <script src="js/session.js"></script>
 
   <!-- Admin JS -->
   <script src="js/admin.js"></script>

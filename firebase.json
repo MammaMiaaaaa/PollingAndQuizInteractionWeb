@@ -1,0 +1,24 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/admin",
+        "destination": "/admin.html"
+      },
+      {
+        "source": "/display",
+        "destination": "/display.html"
+      },
+      {
+        "source": "/join",
+        "destination": "/join.html"
+      }
+    ]
+  }
+}

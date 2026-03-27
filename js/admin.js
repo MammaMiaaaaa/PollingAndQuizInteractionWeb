@@ -36,9 +36,14 @@
   var userCount = document.getElementById('userCount');
 
   // Polling elements
-  var pollingPrompt = document.getElementById('pollingPrompt');
+  var newPollingQuestion = document.getElementById('newPollingQuestion');
+  var addPollingQuestionBtn = document.getElementById('addPollingQuestionBtn');
   var startPollingBtn = document.getElementById('startPollingBtn');
   var stopPollingBtn = document.getElementById('stopPollingBtn');
+  var prevPollingQBtn = document.getElementById('prevPollingQBtn');
+  var nextPollingQBtn = document.getElementById('nextPollingQBtn');
+  var activePollingQuestion = document.getElementById('activePollingQuestion');
+  var pollingQIndex = document.getElementById('pollingQIndex');
   var pollingResultsContainer = document.getElementById('pollingResultsContainer');
 
   // Quiz elements
@@ -51,9 +56,14 @@
   };
   var correctAnswer = document.getElementById('correctAnswer');
   var quizTimer = document.getElementById('quizTimer');
+  var addQuizQuestionBtn = document.getElementById('addQuizQuestionBtn');
   var startQuizBtn = document.getElementById('startQuizBtn');
+  var revealAnswerBtn = document.getElementById('revealAnswerBtn');
+  var nextQuizQBtn = document.getElementById('nextQuizQBtn');
   var stopQuizBtn = document.getElementById('stopQuizBtn');
   var showLeaderboardBtn = document.getElementById('showLeaderboardBtn');
+  var activeQuizQuestion = document.getElementById('activeQuizQuestion');
+  var quizQIndex = document.getElementById('quizQIndex');
   var resultCounts = {
     A: document.getElementById('resultA'),
     B: document.getElementById('resultB'),
@@ -62,6 +72,7 @@
   };
 
   // Settings elements
+  var oldPassword = document.getElementById('oldPassword');
   var adminPassword = document.getElementById('adminPassword');
   var confirmPassword = document.getElementById('confirmPassword');
   var updatePasswordBtn = document.getElementById('updatePasswordBtn');
@@ -73,8 +84,8 @@
   var currentSection = 'session';
   var currentUser = null;
   var usersUnsubscribe = null;
-  var quizAnswersUnsubscribe = null;
-  var pollingAnswersUnsubscribe = null;
+  var pollingListenerActive = false;
+  var quizListenerActive = false;
 
   // ==========================================================================
   // Initialization
@@ -83,26 +94,32 @@
   /**
    * Initialize the admin panel
    */
-  function init() {
-    // Check if already logged in
+   async function init() {
+    try {
+      await Auth.initAuth();
+      console.log('Auth initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize auth:', error);
+    }
+
     if (Auth.isLoggedIn()) {
       showDashboard();
     } else {
       showLogin();
     }
 
-    // Initialize auth settings
-    Auth.initAuth().catch(function(error) {
-      console.error('Failed to initialize auth:', error);
-    });
-
-    // Subscribe to session updates
     Session.subscribeToSession();
 
-    // Listen for session changes
+    Session.fetchSessionState().then(function() {
+      renderPollingQuestionList();
+      renderQuizQuestionList();
+      var state = Session.getState();
+      updateActivePollingQuestion(state);
+      updateActiveQuizQuestion(state);
+    });
+
     Session.onSessionChange(handleSessionChange);
 
-    // Setup event listeners
     setupLoginForm();
     setupNavigation();
     setupSessionControls();
@@ -139,28 +156,37 @@
    * Setup login form submission
    */
   function setupLoginForm() {
-    if (!loginForm) return;
+    if (!loginForm) {
+      console.error('Login form not found');
+      return;
+    }
 
-    loginForm.addEventListener('submit', function(e) {
+    loginForm.addEventListener('submit', async function(e) {
       e.preventDefault();
+      console.log('Login form submitted');
 
       var password = passwordInput.value.trim();
+      console.log('Password entered:', password ? 'yes' : 'no');
 
       if (!password) {
         showLoginError('Please enter a password');
         return;
       }
 
-      Auth.login(password).then(function(success) {
+      try {
+        console.log('Calling Auth.login...');
+        var success = await Auth.login(password);
+        console.log('Login result:', success);
+
         if (success) {
           showDashboard();
         } else {
           showLoginError('Incorrect password. Please try again.');
         }
-      }).catch(function(error) {
+      } catch (error) {
         console.error('Login error:', error);
-        showLoginError('Login failed. Please try again.');
-      });
+        showLoginError('Login failed: ' + error.message);
+      }
     });
   }
 
@@ -255,16 +281,26 @@
     }
 
     // Polling controls
+    if (addPollingQuestionBtn) {
+      addPollingQuestionBtn.addEventListener('click', function() {
+        var text = newPollingQuestion.value.trim();
+        if (!text) return;
+        Session.addPollingQuestion(text).then(function() {
+          newPollingQuestion.value = '';
+          renderPollingQuestionList();
+        });
+      });
+    }
+
     if (startPollingBtn) {
       startPollingBtn.addEventListener('click', function() {
-        var prompt = pollingPrompt.value.trim();
-        if (prompt) {
-          Session.addPollingQuestion(prompt).then(function() {
-            Session.switchToPolling();
-          }).catch(function(error) {
-            console.error('Failed to start polling:', error);
-          });
+        var state = Session.getState();
+        var questions = (state.pollingConfig || {}).questions || [];
+        if (questions.length === 0) {
+          alert('Add at least one question first');
+          return;
         }
+        Session.switchToPolling();
       });
     }
 
@@ -276,9 +312,31 @@
       });
     }
 
+    if (prevPollingQBtn) {
+      prevPollingQBtn.addEventListener('click', function() {
+        var state = Session.getState();
+        var idx = (state.pollingConfig || {}).currentIndex || 0;
+        if (idx > 0) {
+          Session.setActivePollingQuestion(idx - 1);
+        }
+      });
+    }
+
+    if (nextPollingQBtn) {
+      nextPollingQBtn.addEventListener('click', function() {
+        var state = Session.getState();
+        var config = state.pollingConfig || {};
+        var idx = config.currentIndex || 0;
+        var questions = config.questions || [];
+        if (idx < questions.length - 1) {
+          Session.setActivePollingQuestion(idx + 1);
+        }
+      });
+    }
+
     // Quiz controls
-    if (startQuizBtn) {
-      startQuizBtn.addEventListener('click', function() {
+    if (addQuizQuestionBtn) {
+      addQuizQuestionBtn.addEventListener('click', function() {
         var question = quizQuestion.value.trim();
         var options = [
           quizOptions.A.value.trim(),
@@ -287,9 +345,8 @@
           quizOptions.D.value.trim()
         ];
         var correct = correctAnswer.value;
-        var timer = parseInt(quizTimer.value, 10) || 30;
+        var timer = parseInt(quizTimer.value, 10) || 20;
 
-        // Validate inputs
         if (!question || options.some(function(o) { return !o; })) {
           alert('Please fill in all quiz fields');
           return;
@@ -303,10 +360,44 @@
         };
 
         Session.addQuizQuestion(questionObj).then(function() {
-          Session.switchToQuiz();
-        }).catch(function(error) {
-          console.error('Failed to start quiz:', error);
+          quizQuestion.value = '';
+          quizOptions.A.value = '';
+          quizOptions.B.value = '';
+          quizOptions.C.value = '';
+          quizOptions.D.value = '';
+          quizTimer.value = '20';
+          renderQuizQuestionList();
         });
+      });
+    }
+
+    if (startQuizBtn) {
+      startQuizBtn.addEventListener('click', function() {
+        var state = Session.getState();
+        var questions = (state.quizConfig || {}).questions || [];
+        if (questions.length === 0) {
+          alert('Add at least one question first');
+          return;
+        }
+        Session.switchToQuiz();
+      });
+    }
+
+    if (revealAnswerBtn) {
+      revealAnswerBtn.addEventListener('click', function() {
+        Session.revealQuizAnswer();
+      });
+    }
+
+    if (nextQuizQBtn) {
+      nextQuizQBtn.addEventListener('click', function() {
+        var state = Session.getState();
+        var config = state.quizConfig || {};
+        var idx = config.currentIndex || 0;
+        var questions = config.questions || [];
+        if (idx < questions.length - 1) {
+          Session.startQuizQuestion(idx + 1);
+        }
       });
     }
 
@@ -329,8 +420,14 @@
     // Password update
     if (updatePasswordBtn) {
       updatePasswordBtn.addEventListener('click', function() {
+        var oldPass = oldPassword ? oldPassword.value.trim() : '';
         var newPass = adminPassword.value;
         var confirmPass = confirmPassword.value;
+
+        if (!oldPass) {
+          alert('Please enter your current password');
+          return;
+        }
 
         if (newPass !== confirmPass) {
           alert('Passwords do not match');
@@ -342,14 +439,14 @@
           return;
         }
 
-        // Get current password from input if needed, or use empty for default
-        Auth.changePassword('', newPass).then(function(success) {
+        Auth.changePassword(oldPass, newPass).then(function(success) {
           if (success) {
             alert('Password updated successfully');
+            if (oldPassword) oldPassword.value = '';
             adminPassword.value = '';
             confirmPassword.value = '';
           } else {
-            alert('Failed to update password');
+            alert('Current password is incorrect');
           }
         }).catch(function(error) {
           console.error('Password update error:', error);
@@ -468,16 +565,15 @@
     updateSessionStatusBadge(state.status);
     updateSessionInfo(state);
     updateControlButtons(state);
-    updatePollingUI(state);
-    updateQuizUI(state);
+    renderPollingQuestionList();
+    renderQuizQuestionList();
+    updateActivePollingQuestion(state);
+    updateActiveQuizQuestion(state);
 
-    // Handle specific actions
     if (action === 'switchToPolling') {
       setupPollingListener();
-    } else if (action === 'switchToQuiz') {
+    } else if (action === 'switchToQuiz' || action === 'startQuizQuestion') {
       setupQuizListener();
-    } else if (action === 'showLeaderboard') {
-      // Leaderboard is handled by display.js
     }
   }
 
@@ -549,7 +645,6 @@
   function updateControlButtons(state) {
     var status = state.status;
 
-    // Session controls
     if (startSessionBtn) {
       startSessionBtn.disabled = status !== 'closed';
     }
@@ -557,40 +652,134 @@
       closeSessionBtn.disabled = status === 'closed';
     }
 
-    // Polling controls
     if (startPollingBtn) {
-      startPollingBtn.disabled = status === 'polling' || status === 'quiz';
+      startPollingBtn.disabled = status === 'polling' || status === 'quiz' || status === 'leaderboard';
     }
     if (stopPollingBtn) {
       stopPollingBtn.disabled = status !== 'polling';
     }
 
-    // Quiz controls
     if (startQuizBtn) {
-      startQuizBtn.disabled = status === 'polling' || status === 'quiz';
+      startQuizBtn.disabled = status === 'polling' || status === 'quiz' || status === 'leaderboard';
+    }
+    if (revealAnswerBtn) {
+      revealAnswerBtn.disabled = status !== 'quiz';
+    }
+    if (nextQuizQBtn) {
+      nextQuizQBtn.disabled = status !== 'quiz';
     }
     if (stopQuizBtn) {
       stopQuizBtn.disabled = status !== 'quiz';
     }
     if (showLeaderboardBtn) {
-      showLeaderboardBtn.disabled = status === 'quiz';
+      showLeaderboardBtn.disabled = status === 'quiz' || status === 'leaderboard';
     }
   }
 
-  /**
-   * Update polling UI based on session state
-   * @param {Object} state - Session state
-   */
-  function updatePollingUI(state) {
-    // Polling UI updates are handled by the polling listener
+  // ==========================================================================
+  // Polling Question Management
+  // ==========================================================================
+
+  function renderPollingQuestionList() {
+    var listEl = document.getElementById('pollingQuestionList');
+    if (!listEl) return;
+
+    var state = Session.getState();
+    var questions = (state.pollingConfig || {}).questions || [];
+    var currentIndex = (state.pollingConfig || {}).currentIndex || 0;
+
+    if (questions.length === 0) {
+      listEl.innerHTML = '<p class="text-center text-muted">No questions added yet</p>';
+      return;
+    }
+
+    var html = '';
+    questions.forEach(function(q, i) {
+      var activeClass = i === currentIndex ? ' active' : '';
+      html += '<div class="question-list-item' + activeClass + '">';
+      html += '<span class="question-index">' + (i + 1) + '</span>';
+      html += '<span class="question-text">' + escapeHtml(q) + '</span>';
+      html += '<button class="question-delete" data-index="' + i + '">X</button>';
+      html += '</div>';
+    });
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.question-delete').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var idx = parseInt(this.getAttribute('data-index'));
+        Session.deletePollingQuestion(idx).then(function() {
+          renderPollingQuestionList();
+        });
+      });
+    });
+
+    if (prevPollingQBtn) prevPollingQBtn.disabled = currentIndex <= 0;
+    if (nextPollingQBtn) nextPollingQBtn.disabled = currentIndex >= questions.length - 1;
+    if (pollingQIndex) pollingQIndex.textContent = (currentIndex + 1) + ' / ' + questions.length;
   }
 
-  /**
-   * Update quiz UI based on session state
-   * @param {Object} state - Session state
-   */
-  function updateQuizUI(state) {
-    // Quiz UI updates are handled by the quiz listener
+  function updateActivePollingQuestion(state) {
+    var config = state.pollingConfig || {};
+    var questions = config.questions || [];
+    var currentIndex = config.currentIndex || 0;
+
+    if (activePollingQuestion) {
+      activePollingQuestion.textContent = questions[currentIndex] || 'No questions yet';
+    }
+  }
+
+  // ==========================================================================
+  // Quiz Question Management
+  // ==========================================================================
+
+  function renderQuizQuestionList() {
+    var listEl = document.getElementById('quizQuestionList');
+    if (!listEl) return;
+
+    var state = Session.getState();
+    var questions = (state.quizConfig || {}).questions || [];
+    var currentIndex = (state.quizConfig || {}).currentIndex || 0;
+
+    if (questions.length === 0) {
+      listEl.innerHTML = '<p class="text-center text-muted">No questions added yet</p>';
+      return;
+    }
+
+    var html = '';
+    questions.forEach(function(q, i) {
+      var activeClass = i === currentIndex ? ' active' : '';
+      var letters = ['A', 'B', 'C', 'D'];
+      var correctLetter = letters[q.correctIndex] || '?';
+      html += '<div class="question-list-item' + activeClass + '">';
+      html += '<span class="question-index">' + (i + 1) + '</span>';
+      html += '<span class="question-text">' + escapeHtml(q.text) + ' (Answer: ' + correctLetter + ', ' + (q.timeLimit || 20) + 's)</span>';
+      html += '<button class="question-delete" data-index="' + i + '">X</button>';
+      html += '</div>';
+    });
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.question-delete').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var idx = parseInt(this.getAttribute('data-index'));
+        Session.deleteQuizQuestion(idx).then(function() {
+          renderQuizQuestionList();
+        });
+      });
+    });
+
+    if (quizQIndex) quizQIndex.textContent = (currentIndex + 1) + ' / ' + questions.length;
+    if (nextQuizQBtn) nextQuizQBtn.disabled = currentIndex >= questions.length - 1;
+  }
+
+  function updateActiveQuizQuestion(state) {
+    var config = state.quizConfig || {};
+    var questions = config.questions || [];
+    var currentIndex = config.currentIndex || 0;
+
+    if (activeQuizQuestion) {
+      var q = questions[currentIndex];
+      activeQuizQuestion.textContent = q ? q.text : 'No questions yet';
+    }
   }
 
   // ==========================================================================
@@ -601,128 +790,125 @@
    * Setup real-time listener for polling answers
    */
   function setupPollingListener() {
-    if (pollingAnswersUnsubscribe) {
-      pollingAnswersUnsubscribe();
+    if (pollingListenerActive) {
+      pollingAnswersRef.off('child_added');
     }
 
-    // Listen to polling answers collection
-    pollingAnswersUnsubscribe = pollingAnswersRef.onSnapshot(function(snapshot) {
-      var count = snapshot.size;
-      renderPollingList(snapshot.docs);
+    var state = Session.getState();
+    var currentIndex = (state.pollingConfig || {}).currentIndex || 0;
+    pollingListenerActive = true;
 
-      // Update response count display
-      var pollingResponses = document.getElementById('pollingResponses');
-      if (pollingResponses) {
-        pollingResponses.textContent = count;
-      }
-    }, function(error) {
-      console.error('Polling answers listener error:', error);
-    });
+    if (pollingResultsContainer) {
+      pollingResultsContainer.innerHTML = '<p class="text-muted">No responses yet</p>';
+    }
+
+    var pollingResponses = document.getElementById('pollingResponses');
+    if (pollingResponses) {
+      pollingResponses.textContent = '0';
+    }
+
+    pollingAnswersRef
+      .orderByChild('questionIndex')
+      .equalTo(currentIndex)
+      .on('child_added', function(snapshot) {
+        var answer = snapshot.val();
+        if (!answer) return;
+
+        if (pollingResponses) {
+          pollingResponses.textContent = parseInt(pollingResponses.textContent || 0) + 1;
+        }
+
+        renderPollingAnswer(answer);
+      }, function(error) {
+        console.error('Polling answers listener error:', error);
+      });
   }
 
-  /**
-   * Render polling results list
-   * @param {Array} answerDocs - Array of polling answer documents
-   */
-  function renderPollingList(answerDocs) {
+  function renderPollingAnswer(answer) {
     if (!pollingResultsContainer) return;
 
-    if (!answerDocs || answerDocs.length === 0) {
-      pollingResultsContainer.innerHTML = '<p class="text-muted">No responses yet</p>';
-      return;
-    }
+    var placeholder = pollingResultsContainer.querySelector('.text-muted');
+    if (placeholder) placeholder.remove();
 
-    var html = '<div class="polling-list">';
-
-    answerDocs.forEach(function(doc) {
-      var answer = doc.data();
-      html += '<div class="polling-item">';
-      html += '<span class="polling-text">' + escapeHtml(answer.text || '') + '</span>';
-      html += '<span class="polling-time">' + formatTime(answer.createdAt) + '</span>';
-      html += '</div>';
-    });
-
-    html += '</div>';
-    pollingResultsContainer.innerHTML = html;
+    var item = document.createElement('div');
+    item.className = 'polling-item';
+    item.innerHTML = '<span class="polling-text">' + escapeHtml(answer.text || '') + '</span>'
+      + '<span class="polling-time">' + formatTime(answer.createdAt) + '</span>';
+    pollingResultsContainer.appendChild(item);
   }
 
   /**
    * Setup real-time listener for quiz answers
    */
   function setupQuizListener() {
-    if (quizAnswersUnsubscribe) {
-      quizAnswersUnsubscribe();
+    if (quizListenerActive) {
+      quizAnswersRef.off('child_added');
     }
 
-    // Listen to quiz answers collection
-    quizAnswersUnsubscribe = quizAnswersRef.onSnapshot(function(snapshot) {
-      // Count answers by option
-      var counts = { A: 0, B: 0, C: 0, D: 0 };
+    var state = Session.getState();
+    var currentIndex = (state.quizConfig || {}).currentIndex || 0;
+    quizListenerActive = true;
+    var counts = { A: 0, B: 0, C: 0, D: 0 };
 
-      snapshot.docs.forEach(function(doc) {
-        var answer = doc.data();
+    Object.keys(counts).forEach(function(opt) {
+      if (resultCounts[opt]) resultCounts[opt].textContent = '0';
+    });
+
+    var existingList = document.querySelector('#quizResultsContainer .quiz-list');
+    if (existingList) existingList.remove();
+
+    quizAnswersRef
+      .orderByChild('questionIndex')
+      .equalTo(currentIndex)
+      .on('child_added', function(snapshot) {
+        var answer = snapshot.val();
+        if (!answer) return;
+
         if (typeof answer.selectedIndex === 'number') {
           var option = ['A', 'B', 'C', 'D'][answer.selectedIndex];
-          if (option) {
+          if (option && counts.hasOwnProperty(option)) {
             counts[option]++;
           }
         }
-      });
 
-      // Update result displays
-      Object.keys(counts).forEach(function(option) {
-        if (resultCounts[option]) {
-          resultCounts[option].textContent = counts[option];
-        }
-      });
+        Object.keys(counts).forEach(function(opt) {
+          if (resultCounts[opt]) {
+            resultCounts[opt].textContent = counts[opt];
+          }
+        });
 
-      renderQuizList(snapshot.docs);
-    }, function(error) {
-      console.error('Quiz answers listener error:', error);
-    });
+        renderQuizAnswer(answer);
+      }, function(error) {
+        console.error('Quiz answers listener error:', error);
+      });
   }
 
-  /**
-   * Render quiz results list
-   * @param {Array} answerDocs - Array of quiz answer documents
-   */
-  function renderQuizList(answerDocs) {
+  function renderQuizAnswer(answer) {
     var quizResultsContainer = document.getElementById('quizResultsContainer');
     if (!quizResultsContainer) return;
 
-    if (!answerDocs || answerDocs.length === 0) {
-      quizResultsContainer.innerHTML = '<p class="text-muted">No answers yet</p>';
-      return;
-    }
-
-    var html = '<div class="quiz-list">';
-
-    answerDocs.forEach(function(doc) {
-      var answer = doc.data();
-      var userName = answer.userId ? 'User' : 'Anonymous';
-      var selectedOption = typeof answer.selectedIndex === 'number'
-        ? ['A', 'B', 'C', 'D'][answer.selectedIndex]
-        : '?';
-      var isCorrect = answer.isCorrect;
-
-      html += '<div class="quiz-item ' + (isCorrect ? 'correct' : 'incorrect') + '">';
-      html += '<span class="quiz-user">' + escapeHtml(userName) + '</span>';
-      html += '<span class="quiz-answer">' + selectedOption + '</span>';
-      html += '<span class="quiz-result">' + (isCorrect ? 'Correct' : 'Wrong') + '</span>';
-      html += '</div>';
-    });
-
-    html += '</div>';
-
-    // Keep the grid but add list below
     var existingGrid = quizResultsContainer.querySelector('.quiz-results-grid');
-    if (existingGrid) {
-      var existingList = quizResultsContainer.querySelector('.quiz-list');
-      if (existingList) {
-        existingList.remove();
-      }
-      quizResultsContainer.insertAdjacentHTML('beforeend', html);
+    if (!existingGrid) return;
+
+    var existingList = quizResultsContainer.querySelector('.quiz-list');
+    if (!existingList) {
+      existingList = document.createElement('div');
+      existingList.className = 'quiz-list';
+      quizResultsContainer.appendChild(existingList);
     }
+
+    var userName = answer.userId ? 'User' : 'Anonymous';
+    var selectedOption = typeof answer.selectedIndex === 'number'
+      ? ['A', 'B', 'C', 'D'][answer.selectedIndex]
+      : '?';
+    var isCorrect = answer.isCorrect;
+
+    var item = document.createElement('div');
+    item.className = 'quiz-item ' + (isCorrect ? 'correct' : 'incorrect');
+    item.innerHTML = '<span class="quiz-user">' + escapeHtml(userName) + '</span>'
+      + '<span class="quiz-answer">' + selectedOption + '</span>'
+      + '<span class="quiz-result">' + (isCorrect ? 'Correct' : 'Wrong') + '</span>';
+    existingList.appendChild(item);
   }
 
   // ==========================================================================
@@ -760,11 +946,11 @@
     if (usersUnsubscribe) {
       usersUnsubscribe();
     }
-    if (quizAnswersUnsubscribe) {
-      quizAnswersUnsubscribe();
+    if (pollingListenerActive) {
+      pollingAnswersRef.off('child_added');
     }
-    if (pollingAnswersUnsubscribe) {
-      pollingAnswersUnsubscribe();
+    if (quizListenerActive) {
+      quizAnswersRef.off('child_added');
     }
   });
 

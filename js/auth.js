@@ -12,6 +12,9 @@
 (function(window) {
   'use strict';
 
+  // bcryptjs exposes as dcodeIO.bcrypt
+  const bcrypt = window.dcodeIO ? window.dcodeIO.bcrypt : window.bcrypt;
+
   // Default admin password
   const DEFAULT_PASSWORD = 'admin123';
 

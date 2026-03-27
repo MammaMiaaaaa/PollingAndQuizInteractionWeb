@@ -169,7 +169,7 @@
       const doc = await usersRef.doc(userId).get();
 
       if (doc.exists) {
-        return { id: doc.id, ...doc.data() };
+        return { id: doc.id, userId: doc.id, ...doc.data() };
       }
 
       return null;
@@ -226,27 +226,24 @@
    * @param {string} text - Answer text
    * @returns {Promise<Object>} Created polling answer document
    */
-  async function addPollingAnswer(userId, questionId, text) {
-    // Add to pollingAnswers collection
+  async function addPollingAnswer(userId, questionIndex, text) {
     const answerDoc = {
       userId: userId,
-      questionId: questionId,
+      questionIndex: questionIndex,
       text: text,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      createdAt: firebase.database.ServerValue.TIMESTAMP
     };
 
-    const docRef = await pollingAnswersRef.add(answerDoc);
+    await pollingAnswersRef.push(answerDoc);
 
-    // Update user points (+50 for polling)
     await updateUserPoints(userId, 'polling', 50);
 
-    // Track in user's answers array
     await usersRef.doc(userId).update({
-      'answers.polling': firebase.firestore.FieldValue.arrayUnion(questionId),
+      'answers.polling': firebase.firestore.FieldValue.arrayUnion(String(questionIndex)),
       lastActive: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    return { id: docRef.id, ...answerDoc };
+    return answerDoc;
   }
 
   /**
