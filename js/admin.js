@@ -32,6 +32,7 @@
   var sessionStatusBadge = document.getElementById('sessionStatusBadge');
   var startSessionBtn = document.getElementById('startSessionBtn');
   var closeSessionBtn = document.getElementById('closeSessionBtn');
+  var resetSessionBtn = document.getElementById('resetSessionBtn');
   var logoutBtn = document.getElementById('logoutBtn');
   var userCount = document.getElementById('userCount');
 
@@ -40,6 +41,7 @@
   var addPollingQuestionBtn = document.getElementById('addPollingQuestionBtn');
   var startPollingBtn = document.getElementById('startPollingBtn');
   var stopPollingBtn = document.getElementById('stopPollingBtn');
+  var toggleResultsBtn = document.getElementById('toggleResultsBtn');
   var prevPollingQBtn = document.getElementById('prevPollingQBtn');
   var nextPollingQBtn = document.getElementById('nextPollingQBtn');
   var activePollingQuestion = document.getElementById('activePollingQuestion');
@@ -59,6 +61,7 @@
   var addQuizQuestionBtn = document.getElementById('addQuizQuestionBtn');
   var startQuizBtn = document.getElementById('startQuizBtn');
   var revealAnswerBtn = document.getElementById('revealAnswerBtn');
+  var showInterimLeaderboardBtn = document.getElementById('showInterimLeaderboardBtn');
   var nextQuizQBtn = document.getElementById('nextQuizQBtn');
   var stopQuizBtn = document.getElementById('stopQuizBtn');
   var showLeaderboardBtn = document.getElementById('showLeaderboardBtn');
@@ -85,6 +88,7 @@
   var currentUser = null;
   var usersUnsubscribe = null;
   var pollingListenerActive = false;
+  var pollResultsVisible = true;
   var quizListenerActive = false;
   var lastAdminPollQuestionIndex = -1;
   var lastAdminQuizQuestionIndex = -1;
@@ -282,6 +286,21 @@
       });
     }
 
+    if (resetSessionBtn) {
+      resetSessionBtn.addEventListener('click', function() {
+        if (confirm('Reset session? This will clear all questions, answers, and user data.')) {
+          Session.resetSession().then(function() {
+            pollingAnswersRef.remove();
+            quizAnswersRef.remove();
+            reactionsRef.remove();
+            console.log('Session reset complete');
+          }).catch(function(error) {
+            console.error('Failed to reset session:', error);
+          });
+        }
+      });
+    }
+
     // Polling controls
     if (addPollingQuestionBtn) {
       addPollingQuestionBtn.addEventListener('click', function() {
@@ -311,6 +330,18 @@
         Session.startSession().catch(function(error) {
           console.error('Failed to stop polling:', error);
         });
+      });
+    }
+
+    if (toggleResultsBtn) {
+      toggleResultsBtn.addEventListener('click', function() {
+        pollResultsVisible = !pollResultsVisible;
+        toggleResultsBtn.textContent = pollResultsVisible ? 'Hide Results' : 'Show Results';
+        if (pollResultsVisible) {
+          Session.showPollingResults();
+        } else {
+          Session.hidePollingResults();
+        }
       });
     }
 
@@ -388,6 +419,33 @@
     if (revealAnswerBtn) {
       revealAnswerBtn.addEventListener('click', function() {
         Session.revealQuizAnswer();
+      });
+    }
+
+    var downloadQrBtn = document.getElementById('downloadQrBtn');
+    if (downloadQrBtn) {
+      downloadQrBtn.addEventListener('click', function() {
+        var qrCanvas = document.querySelector('#qrContainer canvas');
+        if (!qrCanvas) {
+          var qrImg = document.querySelector('#qrContainer img');
+          if (qrImg) {
+            var link = document.createElement('a');
+            link.download = 'anxietytalk-qr.png';
+            link.href = qrImg.src;
+            link.click();
+          }
+          return;
+        }
+        var link = document.createElement('a');
+        link.download = 'anxietytalk-qr.png';
+        link.href = qrCanvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    if (showInterimLeaderboardBtn) {
+      showInterimLeaderboardBtn.addEventListener('click', function() {
+        Session.showInterimLeaderboard();
       });
     }
 
@@ -533,7 +591,7 @@
     }
 
     var html = '<table class="users-table">';
-    html += '<thead><tr><th>Name</th><th>Points</th><th>Status</th></tr></thead>';
+    html += '<thead><tr><th>Name</th><th>Points</th><th>Status</th><th>Actions</th></tr></thead>';
     html += '<tbody>';
 
     userDocs.forEach(function(doc) {
@@ -545,11 +603,25 @@
       html += '<td>' + escapeHtml(name) + '</td>';
       html += '<td>' + totalPoints + '</td>';
       html += '<td><span class="badge badge-success">Active</span></td>';
+      html += '<td><button class="btn btn-danger btn-sm kick-user-btn" data-user-id="' + doc.id + '">Kick</button></td>';
       html += '</tr>';
     });
 
     html += '</tbody></table>';
     usersList.innerHTML = html;
+
+    usersList.querySelectorAll('.kick-user-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var userId = this.getAttribute('data-user-id');
+        if (confirm('Kick this user? They will be removed from the session.')) {
+          usersRef.doc(userId).delete().then(function() {
+            console.log('User kicked:', userId);
+          }).catch(function(error) {
+            console.error('Failed to kick user:', error);
+          });
+        }
+      });
+    });
   }
 
   // ==========================================================================
@@ -662,12 +734,18 @@
     if (stopPollingBtn) {
       stopPollingBtn.disabled = status !== 'polling';
     }
+    if (toggleResultsBtn) {
+      toggleResultsBtn.disabled = status !== 'polling';
+    }
 
     if (startQuizBtn) {
       startQuizBtn.disabled = status === 'polling' || status === 'quiz' || status === 'leaderboard';
     }
     if (revealAnswerBtn) {
       revealAnswerBtn.disabled = status !== 'quiz';
+    }
+    if (showInterimLeaderboardBtn) {
+      showInterimLeaderboardBtn.disabled = status !== 'quiz';
     }
     if (nextQuizQBtn) {
       nextQuizQBtn.disabled = status !== 'quiz';

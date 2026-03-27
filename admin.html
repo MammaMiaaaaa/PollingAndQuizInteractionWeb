@@ -108,6 +108,7 @@
           <p class="qr-instruction text-center mt-md">
             Scan to join: <strong id="joinUrl">/join.html</strong>
           </p>
+          <button id="downloadQrBtn" class="btn btn-secondary btn-sm mt-md w-full">Download QR Code</button>
         </div>
       </div>
 
@@ -120,6 +121,7 @@
           <div class="control-buttons">
             <button id="startSessionBtn" class="btn btn-success btn-lg">Start Session</button>
             <button id="closeSessionBtn" class="btn btn-danger btn-lg" disabled>Close Session</button>
+            <button id="resetSessionBtn" class="btn btn-secondary btn-lg">Reset Session</button>
           </div>
           <div class="session-info mt-lg">
             <div class="info-item">
@@ -174,6 +176,7 @@
           <!-- Start/Stop -->
           <div class="control-buttons mt-lg">
             <button id="startPollingBtn" class="btn btn-primary btn-lg" disabled>Start Polling</button>
+            <button id="toggleResultsBtn" class="btn btn-secondary" disabled>Hide Results</button>
             <button id="stopPollingBtn" class="btn btn-danger btn-lg" disabled>Stop Polling</button>
           </div>
 
@@ -257,6 +260,7 @@
           <div class="control-buttons mt-lg">
             <button id="startQuizBtn" class="btn btn-primary btn-lg" disabled>Start Quiz</button>
             <button id="revealAnswerBtn" class="btn btn-secondary btn-lg" disabled>Reveal Answer</button>
+            <button id="showInterimLeaderboardBtn" class="btn btn-secondary btn-lg" disabled>Show Interim</button>
             <button id="nextQuizQBtn" class="btn btn-secondary btn-lg" disabled>Next Question</button>
             <button id="stopQuizBtn" class="btn btn-danger btn-lg" disabled>End Quiz</button>
             <button id="showLeaderboardBtn" class="btn btn-success btn-lg" disabled>Show Leaderboard</button>

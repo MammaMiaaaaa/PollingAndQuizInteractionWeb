@@ -45,6 +45,7 @@
     C: document.getElementById('optionCText'),
     D: document.getElementById('optionDText')
   };
+  var quizAnswerCounter = document.getElementById('quizAnswerCounter');
   var quizResultsOverlay = document.getElementById('quizResultsOverlay');
   var resultsGrid = document.getElementById('resultsGrid');
   var resultsCorrect = document.getElementById('resultsCorrect');
@@ -245,6 +246,7 @@
     var pollingConfig = state.pollingConfig || {};
     var questions = pollingConfig.questions || [];
     var currentIndex = pollingConfig.currentIndex || 0;
+    var showResults = pollingConfig.showResults !== false;
 
     var question = questions[currentIndex];
 
@@ -256,6 +258,17 @@
       requestAnimationFrame(function() {
         bubbleCloud.resize();
       });
+    }
+
+    if (!showResults) {
+      if (bubbleCloud) bubbleCloud.clear();
+      if (pollingResponses) pollingResponses.textContent = '0';
+      if (pollingListenerActive) {
+        pollingAnswersRef.off();
+        pollingListenerActive = false;
+      }
+      lastPollQuestionIndex = -1;
+      return;
     }
 
     if (currentIndex !== lastPollQuestionIndex) {
@@ -373,6 +386,11 @@
       quizResultsOverlay.classList.add('hidden');
     }
 
+    // Reset answer counter
+    if (quizAnswerCounter) {
+      quizAnswerCounter.textContent = '0 orang sudah menjawab';
+    }
+
     // Reset quiz results grid
     if (resultsGrid) {
       resultsGrid.innerHTML = '';
@@ -470,12 +488,19 @@
       var correctIndex = question.correctIndex || 0;
       var letters = ['A', 'B', 'C', 'D'];
 
+      var maxCount = Math.max.apply(null, Object.values(quizAnswerCounts).concat([1]));
+
       resultsGrid.innerHTML = question.options.map(function(option, index) {
         var letter = letters[index];
+        var count = quizAnswerCounts[letter] || 0;
         var isCorrect = index === correctIndex;
-        return '<div class="result-item ' + (isCorrect ? 'correct' : '') + '">' +
-               '<span class="result-letter">' + letter + '</span>' +
-               '<span class="result-text">' + option + '</span>' +
+        var heightPercent = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        return '<div class="result-bar">' +
+               '<span class="result-bar-label">' + letter + '</span>' +
+               '<div class="result-bar-fill" data-answer="' + letter + '" style="--fill-height: ' + heightPercent + '%;">' +
+               '<span style="position:absolute;top:8px;font-family:var(--font-display);font-size:var(--text-xl);color:#fff;">' + count + '</span>' +
+               '</div>' +
+               '<span class="result-bar-count">' + (isCorrect ? '&#10003; ' : '') + count + '</span>' +
                '</div>';
       }).join('');
     }
@@ -514,6 +539,11 @@
           el.textContent = quizAnswerCounts[opt];
         }
       });
+
+      var totalCount = Object.values(quizAnswerCounts).reduce(function(sum, count) { return sum + count; }, 0);
+      if (quizAnswerCounter) {
+        quizAnswerCounter.textContent = totalCount + ' orang sudah menjawab';
+      }
     }, function(error) {
       console.error('Quiz listener error:', error);
       });
@@ -539,7 +569,11 @@
       });
 
       if (leaderboardDisplay) {
-        leaderboardDisplay.showFinal(users);
+        if (state.leaderboardType === 'interim') {
+          leaderboardDisplay.showInterim(users, 5);
+        } else {
+          leaderboardDisplay.showFinal(users);
+        }
       }
     }).catch(function(error) {
       console.error('Failed to fetch users for leaderboard:', error);

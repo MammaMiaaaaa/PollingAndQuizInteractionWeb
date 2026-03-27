@@ -42,6 +42,7 @@
   var pollPrompt = document.getElementById('pollPrompt');
   var customKeywordInput = document.getElementById('customKeywordInput');
   var sendCustomKeyword = document.getElementById('sendCustomKeyword');
+  var pollCharCounter = document.getElementById('pollCharCounter');
 
   // Quiz elements
   var quizTimerProgress = document.getElementById('quizTimerProgress');
@@ -49,6 +50,8 @@
   var quizPromptText = document.getElementById('quizPromptText');
   var quizAnswerButtons = document.getElementById('quizAnswerButtons');
   var quizFeedback = document.getElementById('quizFeedback');
+  var quizCountdown = document.getElementById('quizCountdown');
+  var countdownNumber = document.getElementById('countdownNumber');
 
   // Leaderboard elements
   var miniLeaderboard = document.getElementById('miniLeaderboard');
@@ -69,6 +72,7 @@
   var pollAnswerCount = 0;
   var quizQuestionStartTime = 0;
   var quizTimerInterval = null;
+  var quizCountdownInterval = null;
 
   var reactionBarInstance = null;
   var quizUserInstance = null;
@@ -450,6 +454,7 @@
       if (text) {
         sendPollAnswer(text);
         customKeywordInput.value = '';
+        if (pollCharCounter) pollCharCounter.textContent = '0/30';
       }
     });
 
@@ -461,7 +466,23 @@
           if (text) {
             sendPollAnswer(text);
             this.value = '';
+            if (pollCharCounter) pollCharCounter.textContent = '0/30';
           }
+        }
+      });
+    }
+
+    if (customKeywordInput) {
+      customKeywordInput.addEventListener('input', function() {
+        if (!pollCharCounter) return;
+        var maxChars = parseInt(customKeywordInput.getAttribute('maxlength')) || 30;
+        var current = customKeywordInput.value.length;
+        pollCharCounter.textContent = current + '/' + maxChars;
+        pollCharCounter.classList.remove('warning', 'limit');
+        if (current >= maxChars) {
+          pollCharCounter.classList.add('limit');
+        } else if (current >= maxChars * 0.8) {
+          pollCharCounter.classList.add('warning');
         }
       });
     }
@@ -535,8 +556,7 @@
       return;
     }
 
-    showQuizQuestion(question, timeLimit);
-    quizQuestionStartTime = Date.now();
+    showQuizCountdown(question, timeLimit);
   }
 
   /**
@@ -544,6 +564,34 @@
    * @param {Object} question - Question object
    * @param {number} timeLimit - Time limit in seconds
    */
+  function showQuizCountdown(question, timeLimit) {
+    if (!quizCountdown) {
+      showQuizQuestion(question, timeLimit);
+      return;
+    }
+
+    quizCountdown.classList.remove('hidden');
+    if (quizAnswerButtons) quizAnswerButtons.style.opacity = '0.3';
+
+    var count = 3;
+    if (countdownNumber) countdownNumber.textContent = count;
+
+    clearInterval(quizCountdownInterval);
+    quizCountdownInterval = setInterval(function() {
+      count--;
+      if (countdownNumber) countdownNumber.textContent = count;
+
+      if (count <= 0) {
+        clearInterval(quizCountdownInterval);
+        quizCountdownInterval = null;
+        quizCountdown.classList.add('hidden');
+        if (quizAnswerButtons) quizAnswerButtons.style.opacity = '1';
+        quizQuestionStartTime = Date.now();
+        showQuizQuestion(question, timeLimit);
+      }
+    }, 1000);
+  }
+
   function showQuizQuestion(question, timeLimit) {
     if (quizPromptText) {
       quizPromptText.textContent = question.text || 'Loading...';

@@ -1,0 +1,23 @@
+{
+  "name": "web-sharing-session-claude",
+  "version": "1.0.0",
+  "description": "An interactive web-based audience engagement platform designed for anxiety awareness sessions. Features real-time polling, quiz functionality, emoji reactions, and a live leaderboard.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MammaMiaaaaa/PollingAndQuizInteractionWeb.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MammaMiaaaaa/PollingAndQuizInteractionWeb/issues"
+  },
+  "homepage": "https://github.com/MammaMiaaaaa/PollingAndQuizInteractionWeb#readme"
+}

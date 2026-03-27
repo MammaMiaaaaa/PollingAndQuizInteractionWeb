@@ -285,6 +285,22 @@
   flex-shrink: 0;
 }
 
+.char-counter {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: #999;
+  text-align: right;
+  margin-top: 0.5rem;
+}
+
+.char-counter.warning {
+  color: var(--color-primary);
+}
+
+.char-counter.limit {
+  color: var(--color-error);
+}
+
 /* ==========================================================================
    Quiz State
    ========================================================================== */
@@ -391,6 +407,13 @@
   background-color: var(--color-error);
   border-color: var(--color-error);
   color: #fff;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
 }
 
 .answer-letter {
@@ -428,6 +451,46 @@
 
 .quiz-feedback.incorrect {
   color: var(--color-error);
+}
+
+.quiz-countdown {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-overlay);
+}
+
+.quiz-countdown.hidden {
+  display: none;
+}
+
+.countdown-number {
+  font-family: var(--font-display);
+  font-size: 8rem;
+  color: var(--color-primary);
+  line-height: 1;
+  animation: countdownPulse 1s ease-in-out infinite;
+}
+
+.countdown-label {
+  font-family: var(--font-body);
+  font-size: var(--text-2xl);
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@keyframes countdownPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 
 /* ==========================================================================

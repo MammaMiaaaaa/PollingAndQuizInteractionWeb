@@ -28,7 +28,8 @@
     },
     pollingConfig: {
       questions: [],
-      currentIndex: 0
+      currentIndex: 0,
+      showResults: true
     },
     quizConfig: {
       questions: [],
@@ -400,6 +401,26 @@
   }
 
   // ============================================
+  // Polling Results Visibility Actions
+  // ============================================
+
+  async function showPollingResults() {
+    await updateState({
+      pollingConfig: Object.assign({}, sessionState.pollingConfig, {
+        showResults: true
+      })
+    }, 'showPollingResults');
+  }
+
+  async function hidePollingResults() {
+    await updateState({
+      pollingConfig: Object.assign({}, sessionState.pollingConfig, {
+        showResults: false
+      })
+    }, 'hidePollingResults');
+  }
+
+  // ============================================
   // Quiz Actions
   // ============================================
 
@@ -493,6 +514,13 @@
     }, 'revealQuizAnswer');
   }
 
+  async function showInterimLeaderboard() {
+    await updateState({
+      status: 'leaderboard',
+      leaderboardType: 'interim'
+    }, 'showInterimLeaderboard');
+  }
+
   /**
    * End the quiz - reset quiz state
    * @returns {Promise<void>}
@@ -533,6 +561,8 @@
     updateSettings: updateSettings,
 
     // Polling actions
+    showPollingResults: showPollingResults,
+    hidePollingResults: hidePollingResults,
     addPollingQuestion: addPollingQuestion,
     updatePollingQuestion: updatePollingQuestion,
     deletePollingQuestion: deletePollingQuestion,
@@ -544,6 +574,7 @@
     deleteQuizQuestion: deleteQuizQuestion,
     startQuizQuestion: startQuizQuestion,
     revealQuizAnswer: revealQuizAnswer,
+    showInterimLeaderboard: showInterimLeaderboard,
     endQuiz: endQuiz
   };
 

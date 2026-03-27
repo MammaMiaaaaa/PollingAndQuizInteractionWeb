@@ -88,13 +88,18 @@
                  placeholder="Type your answer..."
                  maxlength="30"
                >
-               <button id="sendCustomKeyword" class="btn btn-primary">Send</button>
-             </div>
-           </div>
+                <button id="sendCustomKeyword" class="btn btn-primary">Send</button>
+              </div>
+              <p class="char-counter" id="pollCharCounter">0/30</p>
+            </div>
          </div>
 
         <!-- Quiz State -->
         <div class="state-view hidden" id="quizState">
+          <div class="quiz-countdown hidden" id="quizCountdown">
+            <span class="countdown-number" id="countdownNumber">3</span>
+            <span class="countdown-label">Get Ready!</span>
+          </div>
           <div class="state-content">
             <div class="quiz-timer-display">
               <svg class="timer-circle" viewBox="0 0 100 100">
