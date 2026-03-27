@@ -86,6 +86,8 @@
   var usersUnsubscribe = null;
   var pollingListenerActive = false;
   var quizListenerActive = false;
+  var lastAdminPollQuestionIndex = -1;
+  var lastAdminQuizQuestionIndex = -1;
 
   // ==========================================================================
   // Initialization
@@ -570,9 +572,11 @@
     updateActivePollingQuestion(state);
     updateActiveQuizQuestion(state);
 
-    if (action === 'switchToPolling') {
+    if (action === 'switchToPolling' || action === 'setActivePollingQuestion' || (state.status === 'polling' && (state.pollingConfig || {}).currentIndex !== lastAdminPollQuestionIndex)) {
+      lastAdminPollQuestionIndex = -1;
       setupPollingListener();
-    } else if (action === 'switchToQuiz' || action === 'startQuizQuestion') {
+    } else if (action === 'switchToQuiz' || action === 'startQuizQuestion' || (state.status === 'quiz' && (state.quizConfig || {}).currentIndex !== lastAdminQuizQuestionIndex)) {
+      lastAdminQuizQuestionIndex = -1;
       setupQuizListener();
     }
   }
@@ -790,45 +794,53 @@
    * Setup real-time listener for polling answers
    */
   function setupPollingListener() {
-    if (pollingListenerActive) {
-      pollingAnswersRef.off('child_added');
-    }
-
     var state = Session.getState();
     var currentIndex = (state.pollingConfig || {}).currentIndex || 0;
+
+    if (currentIndex === lastAdminPollQuestionIndex) return;
+
+    if (pollingListenerActive) {
+      pollingAnswersRef.off();
+    }
+
+    lastAdminPollQuestionIndex = currentIndex;
     pollingListenerActive = true;
 
-    if (pollingResultsContainer) {
-      pollingResultsContainer.innerHTML = '<p class="text-muted">No responses yet</p>';
-    }
+    pollingAnswersRef.on('value', function(snapshot) {
+      var count = 0;
 
-    var pollingResponses = document.getElementById('pollingResponses');
-    if (pollingResponses) {
-      pollingResponses.textContent = '0';
-    }
+      if (pollingResultsContainer) {
+        pollingResultsContainer.innerHTML = '';
+      }
 
-    pollingAnswersRef
-      .orderByChild('questionIndex')
-      .equalTo(currentIndex)
-      .on('child_added', function(snapshot) {
-        var answer = snapshot.val();
-        if (!answer) return;
-
-        if (pollingResponses) {
-          pollingResponses.textContent = parseInt(pollingResponses.textContent || 0) + 1;
+      if (!snapshot.exists()) {
+        if (pollingResultsContainer) {
+          pollingResultsContainer.innerHTML = '<p class="text-muted">No responses yet</p>';
         }
+        if (document.getElementById('pollingResponses')) {
+          document.getElementById('pollingResponses').textContent = '0';
+        }
+        return;
+      }
 
+      snapshot.forEach(function(childSnapshot) {
+        var answer = childSnapshot.val();
+        if (!answer) return;
+        if ((answer.questionIndex || 0) !== currentIndex) return;
+        count++;
         renderPollingAnswer(answer);
-      }, function(error) {
-        console.error('Polling answers listener error:', error);
       });
+
+      if (document.getElementById('pollingResponses')) {
+        document.getElementById('pollingResponses').textContent = count;
+      }
+    }, function(error) {
+      console.error('[Admin] Polling answers listener error:', error);
+    });
   }
 
   function renderPollingAnswer(answer) {
     if (!pollingResultsContainer) return;
-
-    var placeholder = pollingResultsContainer.querySelector('.text-muted');
-    if (placeholder) placeholder.remove();
 
     var item = document.createElement('div');
     item.className = 'polling-item';
@@ -841,12 +853,16 @@
    * Setup real-time listener for quiz answers
    */
   function setupQuizListener() {
-    if (quizListenerActive) {
-      quizAnswersRef.off('child_added');
-    }
-
     var state = Session.getState();
     var currentIndex = (state.quizConfig || {}).currentIndex || 0;
+
+    if (currentIndex === lastAdminQuizQuestionIndex) return;
+
+    if (quizListenerActive) {
+      quizAnswersRef.off();
+    }
+
+    lastAdminQuizQuestionIndex = currentIndex;
     quizListenerActive = true;
     var counts = { A: 0, B: 0, C: 0, D: 0 };
 
@@ -857,12 +873,10 @@
     var existingList = document.querySelector('#quizResultsContainer .quiz-list');
     if (existingList) existingList.remove();
 
-    quizAnswersRef
-      .orderByChild('questionIndex')
-      .equalTo(currentIndex)
-      .on('child_added', function(snapshot) {
-        var answer = snapshot.val();
-        if (!answer) return;
+    quizAnswersRef.on('child_added', function(snapshot) {
+      var answer = snapshot.val();
+      if (!answer) return;
+      if ((answer.questionIndex || 0) !== currentIndex) return;
 
         if (typeof answer.selectedIndex === 'number') {
           var option = ['A', 'B', 'C', 'D'][answer.selectedIndex];
@@ -947,10 +961,10 @@
       usersUnsubscribe();
     }
     if (pollingListenerActive) {
-      pollingAnswersRef.off('child_added');
+      pollingAnswersRef.off();
     }
     if (quizListenerActive) {
-      quizAnswersRef.off('child_added');
+      quizAnswersRef.off();
     }
   });
 

@@ -40,7 +40,6 @@
 
   // Polling elements
   var pollPrompt = document.getElementById('pollPrompt');
-  var keywordButtons = document.getElementById('keywordButtons');
   var customKeywordInput = document.getElementById('customKeywordInput');
   var sendCustomKeyword = document.getElementById('sendCustomKeyword');
 
@@ -436,30 +435,8 @@
     if (customKeywordInput) customKeywordInput.disabled = false;
     if (sendCustomKeyword) sendCustomKeyword.disabled = false;
 
-    generateKeywordButtons();
     setupCustomKeywordInput();
     updatePollCounter(0, questions.length, currentIndex);
-  }
-
-  /**
-   * Generate keyword buttons for quick responses
-   */
-  function generateKeywordButtons() {
-    if (!keywordButtons) return;
-
-    var keywords = ['anxious', 'stressed', 'calm', 'happy', 'worried', 'relaxed'];
-
-    keywordButtons.innerHTML = keywords.map(function(keyword) {
-      return '<button class="keyword-btn" data-keyword="' + keyword + '">' + keyword + '</button>';
-    }).join('');
-
-    // Add click handlers
-    keywordButtons.querySelectorAll('.keyword-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var keyword = this.getAttribute('data-keyword');
-        sendPollAnswer(keyword);
-      });
-    });
   }
 
   /**

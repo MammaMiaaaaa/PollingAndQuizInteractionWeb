@@ -76,26 +76,22 @@
           </div>
         </div>
 
-        <!-- Polling State -->
-        <div class="state-view hidden" id="pollingState">
-          <div class="state-content">
-            <h2 class="state-title" id="pollPrompt">Share your thoughts</h2>
-            <div class="keyword-buttons" id="keywordButtons">
-              <!-- Keyword buttons will be populated dynamically -->
-            </div>
-            <p class="state-hint">Tap a keyword or type your own</p>
-            <div class="custom-input-container">
-              <input
-                type="text"
-                id="customKeywordInput"
-                class="form-input"
-                placeholder="Type your own..."
-                maxlength="30"
-              >
-              <button id="sendCustomKeyword" class="btn btn-primary">Send</button>
-            </div>
-          </div>
-        </div>
+         <!-- Polling State -->
+         <div class="state-view hidden" id="pollingState">
+           <div class="state-content">
+             <h2 class="state-title" id="pollPrompt">Share your thoughts</h2>
+             <div class="custom-input-container">
+               <input
+                 type="text"
+                 id="customKeywordInput"
+                 class="form-input"
+                 placeholder="Type your answer..."
+                 maxlength="30"
+               >
+               <button id="sendCustomKeyword" class="btn btn-primary">Send</button>
+             </div>
+           </div>
+         </div>
 
         <!-- Quiz State -->
         <div class="state-view hidden" id="quizState">

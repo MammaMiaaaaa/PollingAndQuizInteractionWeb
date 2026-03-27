@@ -67,6 +67,7 @@
 
   var pollingListenerActive = false;
   var quizListenerActive = false;
+  var lastPollQuestionIndex = -1;
   var pollAnswerCount = 0;
   var quizAnswerCounts = { A: 0, B: 0, C: 0, D: 0 };
 
@@ -245,77 +246,61 @@
     var questions = pollingConfig.questions || [];
     var currentIndex = pollingConfig.currentIndex || 0;
 
-    // Get current question
     var question = questions[currentIndex];
 
-    // Update polling prompt display
     if (pollingPrompt && question) {
       pollingPrompt.textContent = question;
     }
 
-    // Fix canvas dimensions — BubbleCloud was init'd while view was hidden (display:none),
-    // so getBoundingClientRect returned 0x0. Re-measure now that the view is visible.
     if (bubbleCloud) {
       requestAnimationFrame(function() {
         bubbleCloud.resize();
       });
     }
 
-    // Clear existing bubbles when starting new polling
-    if (bubbleCloud && (action === 'switchToPolling' || action === 'setActivePollingQuestion')) {
-      bubbleCloud.clear();
-      pollAnswerCount = 0;
-      if (pollingResponses) {
-        pollingResponses.textContent = '0';
-      }
-    }
-
-    // Reset responses count
-    if (action === 'switchToPolling' || action === 'setActivePollingQuestion') {
-      pollAnswerCount = 0;
-    }
-
-    // Setup polling listener if not already set up
-    if (!pollingListenerActive) {
-      setupPollingListener();
+    if (currentIndex !== lastPollQuestionIndex) {
+      lastPollQuestionIndex = currentIndex;
+      setupPollingListener(currentIndex);
     }
   }
 
-  /**
-   * Setup real-time listener for polling answers
-   */
-  function setupPollingListener() {
+  function setupPollingListener(questionIndex) {
     if (pollingListenerActive) {
-      pollingAnswersRef.off('child_added');
+      pollingAnswersRef.off();
     }
 
     pollAnswerCount = 0;
     pollingListenerActive = true;
 
-    var state = Session.getState();
-    var currentIndex = (state.pollingConfig || {}).currentIndex || 0;
+    if (bubbleCloud) {
+      bubbleCloud.clear();
+    }
 
-    console.log('[Display] Setting up polling listener, questionIndex:', currentIndex);
+    console.log('[Display] setupPollingListener for questionIndex:', questionIndex);
 
-    pollingAnswersRef
-      .orderByChild('questionIndex')
-      .equalTo(currentIndex)
-      .on('child_added', function(snapshot) {
-        var answer = snapshot.val();
-        console.log('[Display] Poll answer received:', answer);
+    pollingAnswersRef.on('value', function(snapshot) {
+      if (bubbleCloud) {
+        bubbleCloud.clear();
+      }
+      pollAnswerCount = 0;
+
+      snapshot.forEach(function(childSnapshot) {
+        var answer = childSnapshot.val();
         if (!answer || !answer.text) return;
+        if ((answer.questionIndex || 0) !== questionIndex) return;
 
         if (bubbleCloud) {
           bubbleCloud.addBubble(answer.text, answer.userId || 'anonymous');
         }
-
         pollAnswerCount++;
-        if (pollingResponses) {
-          pollingResponses.textContent = pollAnswerCount;
-        }
-      }, function(error) {
-        console.error('[Display] Polling listener error:', error);
       });
+
+      if (pollingResponses) {
+        pollingResponses.textContent = pollAnswerCount;
+      }
+    }, function(error) {
+      console.error('[Display] Polling listener error:', error);
+    });
   }
 
   // ==========================================================================
@@ -509,31 +494,28 @@
       quizAnswersRef.off('child_added');
     }
 
+    var currentIndex = (Session.getState().quizConfig || {}).currentIndex || 0;
     quizAnswerCounts = { A: 0, B: 0, C: 0, D: 0 };
     quizListenerActive = true;
 
-    console.log('Setting up quiz listener on RTDB:', quizAnswersRef.path);
+    quizAnswersRef.on('child_added', function(snapshot) {
+      var answer = snapshot.val();
+      if (!answer || typeof answer.selectedIndex !== 'number') return;
+      if ((answer.questionIndex || 0) !== currentIndex) return;
 
-    quizAnswersRef
-      .orderByChild('questionIndex')
-      .equalTo((Session.getState().quizConfig || {}).currentIndex || 0)
-      .on('child_added', function(snapshot) {
-        var answer = snapshot.val();
-        if (!answer || typeof answer.selectedIndex !== 'number') return;
+      var option = ['A', 'B', 'C', 'D'][answer.selectedIndex];
+      if (option && quizAnswerCounts.hasOwnProperty(option)) {
+        quizAnswerCounts[option]++;
+      }
 
-        var option = ['A', 'B', 'C', 'D'][answer.selectedIndex];
-        if (option && quizAnswerCounts.hasOwnProperty(option)) {
-          quizAnswerCounts[option]++;
+      Object.keys(quizAnswerCounts).forEach(function(opt) {
+        var el = document.getElementById('result' + opt);
+        if (el) {
+          el.textContent = quizAnswerCounts[opt];
         }
-
-        Object.keys(quizAnswerCounts).forEach(function(opt) {
-          var el = document.getElementById('result' + opt);
-          if (el) {
-            el.textContent = quizAnswerCounts[opt];
-          }
-        });
-      }, function(error) {
-        console.error('Quiz listener error:', error);
+      });
+    }, function(error) {
+      console.error('Quiz listener error:', error);
       });
   }
 
