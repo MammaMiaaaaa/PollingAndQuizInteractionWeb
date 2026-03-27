@@ -16,3 +16,5 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: pollingandquizweb
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
