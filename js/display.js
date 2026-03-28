@@ -68,8 +68,11 @@
 
   var pollingListenerActive = false;
   var quizListenerActive = false;
+  var pollingUnsubscribe = null;
+  var quizUnsubscribe = null;
   var lastPollQuestionIndex = -1;
   var pollAnswerCount = 0;
+  var pollProcessedAnswers = {}; // Track processed answer IDs to avoid duplicates
   var quizAnswerCounts = { A: 0, B: 0, C: 0, D: 0 };
 
   // ==========================================================================
@@ -221,15 +224,19 @@
    * @param {Object} state - Session state
    */
   function handleWaitingState(state) {
-    // Clear any existing bubbles
-    if (bubbleCloud) {
-      bubbleCloud.clear();
-    }
+    try {
+      // Clear any existing bubbles
+      if (bubbleCloud) {
+        bubbleCloud.clear();
+      }
 
-    // Stop polling listener if active
-    if (pollingUnsubscribe) {
-      pollingUnsubscribe();
-      pollingUnsubscribe = null;
+      // Stop polling listener if active
+      if (typeof pollingUnsubscribe !== 'undefined' && pollingUnsubscribe) {
+        pollingUnsubscribe();
+        pollingUnsubscribe = null;
+      }
+    } catch (e) {
+      console.error('Error in handleWaitingState:', e);
     }
   }
 
@@ -279,10 +286,11 @@
 
   function setupPollingListener(questionIndex) {
     if (pollingListenerActive) {
-      pollingAnswersRef.off();
+      pollingAnswersRef.off('child_added');
     }
 
     pollAnswerCount = 0;
+    pollProcessedAnswers = {}; // Reset processed answers tracking
     pollingListenerActive = true;
 
     if (bubbleCloud) {
@@ -291,19 +299,20 @@
 
     console.log('[Display] setupPollingListener for questionIndex:', questionIndex);
 
-    pollingAnswersRef.on('value', function(snapshot) {
-      if (bubbleCloud) {
-        bubbleCloud.clear();
-      }
-      pollAnswerCount = 0;
-
+    // Use once('value') to load existing answers ONCE (doesn't repeat on reconnection)
+    pollingAnswersRef.once('value').then(function(snapshot) {
       snapshot.forEach(function(childSnapshot) {
+        var answerId = childSnapshot.key;
         var answer = childSnapshot.val();
+
         if (!answer || !answer.text) return;
         if ((answer.questionIndex || 0) !== questionIndex) return;
 
+        // Mark as processed (don't animate existing answers)
+        pollProcessedAnswers[answerId] = true;
+
         if (bubbleCloud) {
-          bubbleCloud.addBubble(answer.text, answer.userId || 'anonymous');
+          bubbleCloud.addBubbleImmediate(answer.text, answer.userId || 'anonymous');
         }
         pollAnswerCount++;
       });
@@ -311,8 +320,32 @@
       if (pollingResponses) {
         pollingResponses.textContent = pollAnswerCount;
       }
-    }, function(error) {
-      console.error('[Display] Polling listener error:', error);
+
+      // Now set up child_added for NEW answers only
+      // This listener will only fire for children added AFTER this point
+      pollingAnswersRef.on('child_added', function(snapshot) {
+        var answerId = snapshot.key;
+        var answer = snapshot.val();
+
+        // Skip if already processed (from the once('value') load)
+        if (pollProcessedAnswers[answerId]) return;
+        pollProcessedAnswers[answerId] = true;
+
+        if (!answer || !answer.text) return;
+        if ((answer.questionIndex || 0) !== questionIndex) return;
+
+        if (bubbleCloud) {
+          bubbleCloud.addBubble(answer.text, answer.userId || 'anonymous');
+        }
+        pollAnswerCount++;
+
+        if (pollingResponses) {
+          pollingResponses.textContent = pollAnswerCount;
+        }
+      });
+
+    }).catch(function(error) {
+      console.error('[Display] Polling initial load error:', error);
     });
   }
 
@@ -326,16 +359,22 @@
    * @param {string} action - Action that triggered the change
    */
   function handleQuizState(state, action) {
+    console.log('[Display] handleQuizState called:', { action: action, state: state });
+
     var quizConfig = state.quizConfig || {};
     var questions = quizConfig.questions || [];
     var currentIndex = quizConfig.currentIndex || 0;
     var revealed = quizConfig.revealed || false;
 
+    console.log('[Display] Quiz questions:', questions.length, 'at index:', currentIndex);
+
     // Get current question
     var question = questions[currentIndex];
 
     if (!question) {
-      console.warn('No quiz question found');
+      console.warn('[Display] No quiz question found at index', currentIndex, 'questions length:', questions.length);
+      // Try to fetch from Firestore as fallback
+      fetchQuizFromFirestore(currentIndex);
       return;
     }
 
@@ -345,11 +384,36 @@
       return;
     }
 
-    // New question starting
-    if (action === 'switchToQuiz' || action === 'startQuizQuestion' || action === 'startQuizQuestion') {
-      currentQuestionIndex = currentIndex;
-      showQuizQuestion(question, quizConfig.timePerQuestion || 30);
-    }
+    // Show the question (always show when status is 'quiz')
+    currentQuestionIndex = currentIndex;
+    showQuizQuestion(question, quizConfig.timePerQuestion || 30);
+  }
+
+  /**
+   * Fallback: fetch quiz questions from Firestore if Realtime Database didn't have them
+   * @param {number} currentIndex - The question index to fetch
+   */
+  function fetchQuizFromFirestore(currentIndex) {
+    console.log('[Display] Fetching quiz from Firestore as fallback...');
+
+    sessionRef.get().then(function(doc) {
+      if (doc.exists) {
+        var data = doc.data();
+        var quizConfig = data.quizConfig || {};
+        var questions = quizConfig.questions || [];
+
+        console.log('[Display] Firestore quiz questions:', questions.length);
+
+        var question = questions[currentIndex];
+        if (question) {
+          console.log('[Display] Found question in Firestore, showing now');
+          currentQuestionIndex = currentIndex;
+          showQuizQuestion(question, quizConfig.timePerQuestion || 30);
+        }
+      }
+    }).catch(function(error) {
+      console.error('[Display] Error fetching from Firestore:', error);
+    });
   }
 
   /**
@@ -589,21 +653,25 @@
    * @param {Object} state - Session state
    */
   function handleClosedState(state) {
-    // Clear all displays
-    if (bubbleCloud) {
-      bubbleCloud.clear();
-    }
+    try {
+      // Clear all displays
+      if (bubbleCloud) {
+        bubbleCloud.clear();
+      }
 
-    stopTimer();
+      stopTimer();
 
-    // Cleanup listeners
-    if (pollingUnsubscribe) {
-      pollingUnsubscribe();
-      pollingUnsubscribe = null;
-    }
-    if (quizUnsubscribe) {
-      quizUnsubscribe();
-      quizUnsubscribe = null;
+      // Cleanup listeners
+      if (typeof pollingUnsubscribe !== 'undefined' && pollingUnsubscribe) {
+        pollingUnsubscribe();
+        pollingUnsubscribe = null;
+      }
+      if (typeof quizUnsubscribe !== 'undefined' && quizUnsubscribe) {
+        quizUnsubscribe();
+        quizUnsubscribe = null;
+      }
+    } catch (e) {
+      console.error('Error in handleClosedState:', e);
     }
   }
 

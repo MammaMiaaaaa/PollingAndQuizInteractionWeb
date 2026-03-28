@@ -400,6 +400,40 @@ var POINTS_PER_REACTION = 1;
   };
 
   /**
+   * Send a reaction to the database
+   * @param {string} emoji - The emoji to send
+   * @param {string} [userId] - Optional user ID for points tracking
+   * @returns {Promise<void>}
+   */
+  ReactionBar.prototype.sendReaction = function(emoji, userId) {
+    // Validate emoji
+    if (!emoji) {
+      return Promise.reject(new Error('No emoji provided'));
+    }
+
+    // Create reaction data
+    var reactionData = {
+      emoji: emoji,
+      timestamp: Date.now()
+    };
+
+    // Add userId if provided
+    if (userId) {
+      reactionData.userId = userId;
+    }
+
+    // Push to Realtime Database
+    return rtdb.ref(REACTIONS_PATH).push(reactionData)
+      .then(function() {
+        console.log('Reaction sent:', emoji);
+      })
+      .catch(function(error) {
+        console.error('Error sending reaction:', error);
+        throw error;
+      });
+  };
+
+  /**
    * Update the emojis displayed in the bar
    * @param {string[]} emojis - New array of emojis
    */

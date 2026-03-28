@@ -292,6 +292,56 @@ const BUBBLE_CONFIG = {
   };
 
   /**
+   * Add a new bubble to the cloud without animation (for loading existing answers)
+   * @param {string} text - The text to display in the bubble
+   * @param {string} userId - The user identifier (for color tracking)
+   * @param {string[]} [previousColors] - Colors to avoid using
+   */
+  BubbleCloud.prototype.addBubbleImmediate = function(text, userId, previousColors) {
+    var radius = BUBBLE_CONFIG.radius;
+
+    // Pick a color
+    var color = this.pickColor(userId, previousColors);
+
+    // Random position within bounds (with padding)
+    var padding = radius * 2;
+    var x = padding + Math.random() * (this.width - padding * 2);
+    var y = padding + Math.random() * (this.height - padding * 2);
+
+    // Random initial velocity
+    var angle = Math.random() * Math.PI * 2;
+    var speed = BUBBLE_CONFIG.minVelocity + Math.random() * (BUBBLE_CONFIG.maxVelocity - BUBBLE_CONFIG.minVelocity);
+    var vx = Math.cos(angle) * speed;
+    var vy = Math.sin(angle) * speed;
+
+    // Create physics body
+    var body = Matter.Bodies.circle(x, y, radius, {
+      restitution: 1,  // Perfect bouncing
+      friction: 0,      // No friction
+      frictionAir: 0,  // No air resistance
+      label: 'bubble'
+    });
+
+    // Set initial velocity
+    Matter.Body.setVelocity(body, { x: vx, y: vy });
+
+    // Add to physics world
+    Matter.Composite.add(this.engine.world, body);
+
+    // Create bubble object with scale = 1 (no animation)
+    var bubble = {
+      body: body,
+      text: text,
+      color: color,
+      scale: 1,  // No animation, already at full scale
+      createdAt: Date.now(),
+      rotation: (Math.random() - 0.5) * 0.5 // Random rotation: -0.25 to 0.25 radians
+    };
+
+    this.bubbles.push(bubble);
+  };
+
+  /**
    * Animate the pop-in effect for a bubble
    * @param {Object} bubble - The bubble object
    */

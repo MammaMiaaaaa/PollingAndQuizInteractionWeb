@@ -495,14 +495,16 @@
   function sendPollAnswer(text) {
     if (!currentUser) return;
 
-    var maxAnswers = (sessionSettings && sessionSettings.defaultSettings && sessionSettings.defaultSettings.maxPollAnswers) || 3;
-    if (pollAnswerCount >= maxAnswers) return;
+    var maxAnswers = (sessionSettings && sessionSettings.defaultSettings && sessionSettings.defaultSettings.maxPollAnswers) || 0;
+    // maxAnswers of 0 means unlimited
+    var hasAnswerLimit = maxAnswers > 0;
+    if (hasAnswerLimit && pollAnswerCount >= maxAnswers) return;
 
     var state = Session.getState();
     var questionIndex = (state.pollingConfig || {}).currentIndex || 0;
 
     pollAnswerCount++;
-    hasAnsweredPoll = pollAnswerCount >= maxAnswers;
+    hasAnsweredPoll = hasAnswerLimit && pollAnswerCount >= maxAnswers;
 
     User.addPollingAnswer(currentUser.userId, questionIndex, text).then(function() {
       console.log('[User] Poll answer sent to RTDB:', text, 'questionIndex:', questionIndex);
@@ -515,13 +517,17 @@
         if (customKeywordInput) customKeywordInput.disabled = true;
         if (sendCustomKeyword) sendCustomKeyword.disabled = true;
       } else if (pollPrompt) {
-        pollPrompt.textContent = 'Answer sent! (' + pollAnswerCount + '/' + maxAnswers + ')';
+        if (hasAnswerLimit) {
+          pollPrompt.textContent = 'Answer sent! (' + pollAnswerCount + '/' + maxAnswers + ')';
+        } else {
+          pollPrompt.textContent = 'Answer sent! (' + pollAnswerCount + ')';
+        }
       }
 
     }).catch(function(error) {
       console.error('[User] Failed to send poll answer:', error);
       pollAnswerCount--;
-      hasAnsweredPoll = pollAnswerCount >= maxAnswers;
+      hasAnsweredPoll = hasAnswerLimit && pollAnswerCount >= maxAnswers;
     });
   }
 

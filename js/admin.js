@@ -42,6 +42,7 @@
   var startPollingBtn = document.getElementById('startPollingBtn');
   var stopPollingBtn = document.getElementById('stopPollingBtn');
   var toggleResultsBtn = document.getElementById('toggleResultsBtn');
+  var clearPollAnswersBtn = document.getElementById('clearPollAnswersBtn');
   var prevPollingQBtn = document.getElementById('prevPollingQBtn');
   var nextPollingQBtn = document.getElementById('nextPollingQBtn');
   var activePollingQuestion = document.getElementById('activePollingQuestion');
@@ -341,6 +342,19 @@
           Session.showPollingResults();
         } else {
           Session.hidePollingResults();
+        }
+      });
+    }
+
+    if (clearPollAnswersBtn) {
+      clearPollAnswersBtn.addEventListener('click', function() {
+        if (confirm('Clear all polling answers? This cannot be undone.')) {
+          pollingAnswersRef.remove().then(function() {
+            console.log('All polling answers cleared');
+            if (pollingResultsContainer) pollingResultsContainer.innerHTML = '';
+          }).catch(function(error) {
+            console.error('Failed to clear answers:', error);
+          });
         }
       });
     }
@@ -736,6 +750,9 @@
     }
     if (toggleResultsBtn) {
       toggleResultsBtn.disabled = status !== 'polling';
+      if (clearPollAnswersBtn) {
+        clearPollAnswersBtn.disabled = status !== 'polling';
+      }
     }
 
     if (startQuizBtn) {

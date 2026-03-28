@@ -22,7 +22,7 @@
     status: 'waiting',
     currentQuestionIndex: 0,
     settings: {
-      maxPollAnswers: 3,
+      maxPollAnswers: 0, // 0 = unlimited
       maxPollChars: 30,
       emojis: ['😰', '😤', '😢', '😅', '🙏']
     },
@@ -179,6 +179,11 @@
       unsubscribe = sessionRefPath.on('value', function(snapshot) {
         var data = snapshot.val();
 
+        console.log('[Session] Realtime DB update received:', data ? {
+          status: data.status,
+          quizQuestionsCount: (data.quizConfig && data.quizConfig.questions) ? data.quizConfig.questions.length : 0
+        } : 'no data');
+
         if (data) {
           // Update local state with remote data
           if (data.status) sessionState.status = data.status;
@@ -187,6 +192,7 @@
           if (data.pollingConfig) sessionState.pollingConfig = Object.assign({}, sessionState.pollingConfig, data.pollingConfig);
           if (data.quizConfig) sessionState.quizConfig = Object.assign({}, sessionState.quizConfig, data.quizConfig);
 
+          console.log('[Session] sessionState.quizConfig.questions after sync:', sessionState.quizConfig.questions);
           notifyListeners('sync');
         }
       }, function(error) {
@@ -221,7 +227,8 @@
       currentQuestionIndex: 0,
       pollingConfig: {
         questions: sessionState.pollingConfig.questions,
-        currentIndex: 0
+        currentIndex: 0,
+        showResults: sessionState.pollingConfig.showResults !== false
       },
       quizConfig: {
         questions: sessionState.quizConfig.questions,
@@ -230,6 +237,13 @@
         revealed: false
       }
     }, 'startSession');
+
+    if (typeof pollingAnswersRef !== 'undefined') {
+      pollingAnswersRef.remove();
+    }
+    if (typeof quizAnswersRef !== 'undefined') {
+      quizAnswersRef.remove();
+    }
   }
 
   /**
@@ -287,7 +301,7 @@
       status: 'waiting',
       currentQuestionIndex: 0,
       settings: {
-        maxPollAnswers: 3,
+        maxPollAnswers: 0, // 0 = unlimited
         maxPollChars: 30,
         emojis: ['😰', '😤', '😢', '😅', '🙏']
       },

@@ -106,7 +106,7 @@
           [FIELD_PASSWORD_HASH]: defaultPasswordHash,
           [FIELD_SESSION_STATUS]: 'waiting',
           [FIELD_DEFAULT_SETTINGS]: {
-            maxPollAnswers: 3,
+            maxPollAnswers: 0, // 0 = unlimited
             maxPollChars: 30,
             emojis: ['😰', '😤', '😢', '😅', '🙏']
           },
